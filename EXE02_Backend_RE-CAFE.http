@@ -1,0 +1,6 @@
+@EXE02_Backend_RE_CAFE_HostAddress = http://localhost:5053
+
+GET {{EXE02_Backend_RE_CAFE_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
