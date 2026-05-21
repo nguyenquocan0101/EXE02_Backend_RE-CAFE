@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recafe_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DisableHttpsRedirection: "true"
+      ApplyMigrationsOnStartup: "true"
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ReCafeDb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      Jwt__Key: ${JWT_KEY:-ThisIsASecretKeyForJWTR_Cafe_Backend_2026_SecureKey}
+      Jwt__Issuer: ${JWT_ISSUER:-ReCafeBackend}
+      Jwt__Audience: ${JWT_AUDIENCE:-ReCafeUsers}
+      Jwt__DurationInMinutes: ${JWT_DURATION_MINUTES:-60}
+    ports:
+      - "${API_PORT:-5080}:8080"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: recafe_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ReCafeDb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - recafe_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ReCafeDb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  recafe_postgres_data:
