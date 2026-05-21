@@ -17,7 +17,9 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         [MinLength(6)]
         public string Password { get; set; } = string.Empty;
 
-        public UserRole Role { get; set; } = UserRole.User;
+        public string FullName { get; set; } = string.Empty;
+
+        public UserRole Role { get; set; } = UserRole.Customer;
     }
 
     public class LoginRequest

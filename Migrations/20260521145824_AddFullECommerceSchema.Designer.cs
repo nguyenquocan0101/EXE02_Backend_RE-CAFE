@@ -4,6 +4,7 @@ using EXE02_Backend_RE_CAFE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EXE02_Backend_RE_CAFE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521145824_AddFullECommerceSchema")]
+    partial class AddFullECommerceSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -408,6 +411,64 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                     b.ToTable("Coupons");
                 });
 
+            modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.CouponUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CouponId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CouponId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CouponUsages");
+                });
+
+            modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.CustomerProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("Birthday")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Level")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("CustomerProfiles");
+                });
+
             modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.InventoryTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -488,9 +549,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("CouponId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -532,8 +590,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CouponId");
 
                     b.HasIndex("ShippingAddressId");
 
@@ -1070,9 +1126,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("Birthday")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1091,11 +1144,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<int>("Level")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1105,9 +1153,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalPoints")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -1204,6 +1249,44 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                     b.Navigation("Partner");
                 });
 
+            modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.CouponUsage", b =>
+                {
+                    b.HasOne("EXE02_Backend_RE_CAFE.Models.Coupon", "Coupon")
+                        .WithMany("CouponUsages")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EXE02_Backend_RE_CAFE.Models.Order", "Order")
+                        .WithOne("CouponUsage")
+                        .HasForeignKey("EXE02_Backend_RE_CAFE.Models.CouponUsage", "OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EXE02_Backend_RE_CAFE.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Coupon");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.CustomerProfile", b =>
+                {
+                    b.HasOne("EXE02_Backend_RE_CAFE.Models.User", "User")
+                        .WithOne("CustomerProfile")
+                        .HasForeignKey("EXE02_Backend_RE_CAFE.Models.CustomerProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.InventoryTransaction", b =>
                 {
                     b.HasOne("EXE02_Backend_RE_CAFE.Models.Product", "Product")
@@ -1249,11 +1332,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
 
             modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.Order", b =>
                 {
-                    b.HasOne("EXE02_Backend_RE_CAFE.Models.Coupon", "Coupon")
-                        .WithMany("Orders")
-                        .HasForeignKey("CouponId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("EXE02_Backend_RE_CAFE.Models.Address", "ShippingAddress")
                         .WithMany()
                         .HasForeignKey("ShippingAddressId")
@@ -1265,8 +1343,6 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Coupon");
 
                     b.Navigation("ShippingAddress");
 
@@ -1488,11 +1564,13 @@ namespace EXE02_Backend_RE_CAFE.Migrations
 
             modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.Coupon", b =>
                 {
-                    b.Navigation("Orders");
+                    b.Navigation("CouponUsages");
                 });
 
             modelBuilder.Entity("EXE02_Backend_RE_CAFE.Models.Order", b =>
                 {
+                    b.Navigation("CouponUsage");
+
                     b.Navigation("OrderItems");
 
                     b.Navigation("Payment");
@@ -1540,6 +1618,8 @@ namespace EXE02_Backend_RE_CAFE.Migrations
                     b.Navigation("Addresses");
 
                     b.Navigation("Cart");
+
+                    b.Navigation("CustomerProfile");
 
                     b.Navigation("LoyaltyPointTransactions");
 

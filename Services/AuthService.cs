@@ -38,7 +38,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Username = request.Username,
                 Email = request.Email,
                 PasswordHash = BC.HashPassword(request.Password),
-                Role = request.Role
+                Role = request.Role,
+                FullName = string.IsNullOrWhiteSpace(request.FullName) ? request.Username : request.FullName
             };
 
             _context.Users.Add(user);
