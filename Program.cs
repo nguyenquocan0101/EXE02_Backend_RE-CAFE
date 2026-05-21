@@ -6,6 +6,8 @@ using System.Text;
 using EXE02_Backend_RE_CAFE.Data;
 using EXE02_Backend_RE_CAFE.Interfaces;
 using EXE02_Backend_RE_CAFE.Services;
+using EXE02_Backend_RE_CAFE.Middlewares;
+using EXE02_Backend_RE_CAFE.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,10 +46,15 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // Register Custom Services
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddApplicationServices();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
