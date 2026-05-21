@@ -97,5 +97,50 @@ namespace EXE02_Backend_RE_CAFE.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<UserResponse?> GetMeAsync(Guid userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserResponse
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                Role = user.Role.ToString(),
+                TotalPoints = user.TotalPoints,
+                Level = user.Level.ToString(),
+                Birthday = user.Birthday,
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task<bool> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            if (!BC.Verify(request.CurrentPassword, user.PasswordHash))
+            {
+                return false; // Current password does not match
+            }
+
+            user.PasswordHash = BC.HashPassword(request.NewPassword);
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
     }
 }
