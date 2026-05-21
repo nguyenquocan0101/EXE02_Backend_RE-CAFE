@@ -11,6 +11,7 @@ namespace EXE02_Backend_RE_CAFE.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IProductService, ProductService>();
             services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<ICartService, CartService>();
             
             return services;
         }
