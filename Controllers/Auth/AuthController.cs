@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -10,7 +11,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseApiController
     {
         private readonly IAuthService _authService;
 
@@ -25,10 +26,21 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var response = await _authService.RegisterAsync(request);
             if (response == null)
             {
-                return BadRequest(new { message = "Username or Email already exists." });
+                var error = ErrorResponse<object>(
+                    message: "Registration failed. Username or email already exists.",
+                    action: "Register",
+                    statusCode: StatusCodes.Status409Conflict);
+
+                return Conflict(error);
             }
 
-            return Ok(response);
+            var success = SuccessResponse(
+                message: "Registration successful. Account created and access token issued.",
+                action: "Register",
+                data: response,
+                statusCode: StatusCodes.Status201Created);
+
+            return StatusCode(StatusCodes.Status201Created, success);
         }
 
         [HttpPost("login")]
@@ -37,17 +49,34 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var response = await _authService.LoginAsync(request);
             if (response == null)
             {
-                return Unauthorized(new { message = "Invalid username or password." });
+                var error = ErrorResponse<object>(
+                    message: "Login failed. Invalid username/email or password.",
+                    action: "Login",
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+                return Unauthorized(error);
             }
 
-            return Ok(response);
+            var success = SuccessResponse(
+                message: "Login successful. Access token issued.",
+                action: "Login",
+                data: response,
+                statusCode: StatusCodes.Status200OK);
+
+            return Ok(success);
         }
 
         [Authorize]
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
+        public IActionResult Logout()
         {
-            return Ok(new { message = "Logged out successfully." });
+            var success = SuccessResponse<object>(
+                message: "Logout successful. Please remove token on client side.",
+                action: "Logout",
+                data: null,
+                statusCode: StatusCodes.Status200OK);
+
+            return Ok(success);
         }
 
         [Authorize]
@@ -57,16 +86,32 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                return Unauthorized(new { message = "Unauthorized request." });
+                var error = ErrorResponse<object>(
+                    message: "Unauthorized request. User identifier is missing or invalid.",
+                    action: "GetMe",
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+                return Unauthorized(error);
             }
 
             var user = await _authService.GetMeAsync(userId);
             if (user == null)
             {
-                return NotFound(new { message = "User not found." });
+                var notFound = ErrorResponse<object>(
+                    message: "User profile not found.",
+                    action: "GetMe",
+                    statusCode: StatusCodes.Status404NotFound);
+
+                return NotFound(notFound);
             }
 
-            return Ok(user);
+            var success = SuccessResponse(
+                message: "User profile retrieved successfully.",
+                action: "GetMe",
+                data: user,
+                statusCode: StatusCodes.Status200OK);
+
+            return Ok(success);
         }
 
         [Authorize]
@@ -76,16 +121,32 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
             {
-                return Unauthorized(new { message = "Unauthorized request." });
+                var error = ErrorResponse<object>(
+                    message: "Unauthorized request. User identifier is missing or invalid.",
+                    action: "ChangePassword",
+                    statusCode: StatusCodes.Status401Unauthorized);
+
+                return Unauthorized(error);
             }
 
             var result = await _authService.ChangePasswordAsync(userId, request);
             if (!result)
             {
-                return BadRequest(new { message = "Invalid current password or user not found." });
+                var badRequest = ErrorResponse<object>(
+                    message: "Change password failed. Current password is incorrect or user does not exist.",
+                    action: "ChangePassword",
+                    statusCode: StatusCodes.Status400BadRequest);
+
+                return BadRequest(badRequest);
             }
 
-            return Ok(new { message = "Password changed successfully." });
+            var success = SuccessResponse<object>(
+                message: "Password changed successfully.",
+                action: "ChangePassword",
+                data: null,
+                statusCode: StatusCodes.Status200OK);
+
+            return Ok(success);
         }
     }
 }

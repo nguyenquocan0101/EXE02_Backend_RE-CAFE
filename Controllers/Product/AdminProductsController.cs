@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -10,7 +11,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
     [ApiController]
     [Route("api/admin/products")]
     [Authorize(Roles = "Admin")]
-    public class AdminProductsController : ControllerBase
+    public class AdminProductsController : BaseApiController
     {
         private readonly IProductService _productService;
 
@@ -25,9 +26,16 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var product = await _productService.CreateProductAsync(request);
             if (product == null)
             {
-                return BadRequest(new { message = "Failed to create product." });
+                return BadRequest(ErrorResponse<object>(
+                    message: "Failed to create product.",
+                    action: "CreateProduct",
+                    statusCode: StatusCodes.Status400BadRequest));
             }
-            return StatusCode(201, product);
+            return StatusCode(StatusCodes.Status201Created, SuccessResponse(
+                message: "Product created successfully.",
+                action: "CreateProduct",
+                data: product,
+                statusCode: StatusCodes.Status201Created));
         }
 
         [HttpPut("{id}")]
@@ -36,9 +44,16 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var product = await _productService.UpdateProductAsync(id, request);
             if (product == null)
             {
-                return BadRequest(new { message = "Failed to update product." });
+                return BadRequest(ErrorResponse<object>(
+                    message: "Failed to update product.",
+                    action: "UpdateProduct",
+                    statusCode: StatusCodes.Status400BadRequest));
             }
-            return Ok(product);
+            return Ok(SuccessResponse(
+                message: "Product updated successfully.",
+                action: "UpdateProduct",
+                data: product,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpDelete("{id}")]
@@ -47,9 +62,16 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var result = await _productService.SoftDeleteProductAsync(id);
             if (!result)
             {
-                return BadRequest(new { message = "Failed to delete product." });
+                return BadRequest(ErrorResponse<object>(
+                    message: "Failed to delete product.",
+                    action: "DeleteProduct",
+                    statusCode: StatusCodes.Status400BadRequest));
             }
-            return Ok(new { message = "Product soft-deleted successfully." });
+            return Ok(SuccessResponse<object>(
+                message: "Product soft-deleted successfully.",
+                action: "DeleteProduct",
+                data: null,
+                statusCode: StatusCodes.Status200OK));
         }
     }
 }

@@ -3,12 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: recafe_api
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       DisableHttpsRedirection: "true"
       ApplyMigrationsOnStartup: "true"
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ReCafeDb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
@@ -22,7 +21,6 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: recafe_postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ReCafeDb}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -30,7 +28,11 @@ services:
     volumes:
       - recafe_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ReCafeDb}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ReCafeDb}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

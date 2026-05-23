@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -12,7 +13,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
     [ApiController]
     [Route("api/cart")]
     [Authorize]
-    public class CartController : ControllerBase
+    public class CartController : BaseApiController
     {
         private readonly ICartService _cartService;
 
@@ -36,7 +37,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var cart = await _cartService.GetCartByUserIdAsync(userId);
-            return Ok(cart);
+            return Ok(SuccessResponse(
+                message: "Cart retrieved successfully.",
+                action: "GetCart",
+                data: cart,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpPost("items")]
@@ -44,7 +49,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var cart = await _cartService.AddItemToCartAsync(userId, request);
-            return Ok(cart);
+            return Ok(SuccessResponse(
+                message: "Item added to cart successfully.",
+                action: "AddItemToCart",
+                data: cart,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpPut("items/{id}")]
@@ -52,7 +61,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var cart = await _cartService.UpdateCartItemAsync(userId, id, request);
-            return Ok(cart);
+            return Ok(SuccessResponse(
+                message: "Cart item updated successfully.",
+                action: "UpdateCartItem",
+                data: cart,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpDelete("items/{id}")]
@@ -60,7 +73,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var cart = await _cartService.RemoveCartItemAsync(userId, id);
-            return Ok(cart);
+            return Ok(SuccessResponse(
+                message: "Cart item removed successfully.",
+                action: "RemoveCartItem",
+                data: cart,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpDelete("clear")]
@@ -68,7 +85,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var cart = await _cartService.ClearCartAsync(userId);
-            return Ok(cart);
+            return Ok(SuccessResponse(
+                message: "Cart cleared successfully.",
+                action: "ClearCart",
+                data: cart,
+                statusCode: StatusCodes.Status200OK));
         }
     }
 }

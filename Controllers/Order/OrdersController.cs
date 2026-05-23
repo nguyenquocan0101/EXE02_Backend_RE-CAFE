@@ -2,6 +2,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -12,7 +13,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
     [ApiController]
     [Route("api/orders")]
     [Authorize]
-    public class OrdersController : ControllerBase
+    public class OrdersController : BaseApiController
     {
         private readonly IOrderService _orderService;
 
@@ -36,7 +37,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var order = await _orderService.CreateOrderAsync(userId, request);
-            return StatusCode(201, order);
+            return StatusCode(StatusCodes.Status201Created, SuccessResponse(
+                message: "Order created successfully.",
+                action: "CreateOrder",
+                data: order,
+                statusCode: StatusCodes.Status201Created));
         }
 
         [HttpGet("my-orders")]
@@ -44,7 +49,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var orders = await _orderService.GetMyOrdersAsync(userId);
-            return Ok(orders);
+            return Ok(SuccessResponse(
+                message: "Orders retrieved successfully.",
+                action: "GetMyOrders",
+                data: orders,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpGet("{id}")]
@@ -54,9 +63,16 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             var order = await _orderService.GetOrderByIdAsync(userId, id);
             if (order == null)
             {
-                return NotFound(new { message = $"Order with ID {id} not found." });
+                return NotFound(ErrorResponse<object>(
+                    message: $"Order with ID {id} not found.",
+                    action: "GetOrderById",
+                    statusCode: StatusCodes.Status404NotFound));
             }
-            return Ok(order);
+            return Ok(SuccessResponse(
+                message: "Order retrieved successfully.",
+                action: "GetOrderById",
+                data: order,
+                statusCode: StatusCodes.Status200OK));
         }
 
         [HttpPut("{id}/cancel")]
@@ -64,7 +80,11 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         {
             var userId = GetUserId();
             var order = await _orderService.CancelOrderAsync(userId, id);
-            return Ok(order);
+            return Ok(SuccessResponse(
+                message: "Order cancelled successfully.",
+                action: "CancelOrder",
+                data: order,
+                statusCode: StatusCodes.Status200OK));
         }
     }
 }

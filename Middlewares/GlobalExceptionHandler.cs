@@ -5,8 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Exceptions;
 
 namespace EXE02_Backend_RE_CAFE.Middlewares
@@ -36,18 +37,20 @@ namespace EXE02_Backend_RE_CAFE.Middlewares
                 message = apiException.Message;
             }
 
-            var problemDetails = new ProblemDetails
-            {
-                Status = (int)statusCode,
-                Title = statusCode.ToString(),
-                Detail = message,
-                Instance = httpContext.Request.Path
-            };
+            var routeAction = httpContext.GetRouteData()?.Values["action"]?.ToString();
+            var actionName = string.IsNullOrWhiteSpace(routeAction) ? "UnhandledException" : routeAction;
 
             httpContext.Response.StatusCode = (int)statusCode;
             httpContext.Response.ContentType = "application/json";
 
-            var responseJson = JsonSerializer.Serialize(problemDetails);
+            var errorResponse = ApiResponseBuilder.Error<object>(
+                message: message,
+                action: actionName,
+                statusCode: (int)statusCode,
+                path: httpContext.Request.Path.Value ?? string.Empty,
+                traceId: httpContext.TraceIdentifier);
+
+            var responseJson = JsonSerializer.Serialize(errorResponse);
             await httpContext.Response.WriteAsync(responseJson, cancellationToken);
 
             return true;
