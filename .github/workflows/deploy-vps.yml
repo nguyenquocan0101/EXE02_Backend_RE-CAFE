@@ -50,6 +50,13 @@ jobs:
               REPO_URL="https://github.com/${{ github.repository }}.git"
             fi
 
+            POSTGRES_PORT="${{ secrets.POSTGRES_PORT || vars.POSTGRES_PORT }}"
+            if [ -z "$POSTGRES_PORT" ]; then
+              POSTGRES_PORT="5432"
+            fi
+            export POSTGRES_PORT
+            echo "Deploy with POSTGRES_PORT=$POSTGRES_PORT"
+
             if [ ! -d "$DEPLOY_PATH/.git" ]; then
               if ! mkdir -p "$DEPLOY_PATH" 2>/dev/null; then
                 sudo mkdir -p "$DEPLOY_PATH"
