@@ -50,18 +50,6 @@ jobs:
               REPO_URL="https://github.com/${{ github.repository }}.git"
             fi
 
-            POSTGRES_PORT="${{ secrets.POSTGRES_PORT || vars.POSTGRES_PORT }}"
-            if [ -z "$POSTGRES_PORT" ]; then
-              if ss -ltn 2>/dev/null | grep -q ':5432 '; then
-                POSTGRES_PORT="5433"
-                echo "Port 5432 is already in use. Fallback to POSTGRES_PORT=5433"
-              else
-                POSTGRES_PORT="5432"
-              fi
-            fi
-            export POSTGRES_PORT
-            echo "Deploy with POSTGRES_PORT=$POSTGRES_PORT"
-
             if [ ! -d "$DEPLOY_PATH/.git" ]; then
               if ! mkdir -p "$DEPLOY_PATH" 2>/dev/null; then
                 sudo mkdir -p "$DEPLOY_PATH"
@@ -76,10 +64,42 @@ jobs:
             git pull --ff-only origin main
 
             if docker compose version >/dev/null 2>&1; then
-              docker compose up -d --build --remove-orphans
+              COMPOSE_CMD="docker compose"
             elif command -v docker-compose >/dev/null 2>&1; then
-              docker-compose up -d --build --remove-orphans
+              COMPOSE_CMD="docker-compose"
             else
               echo "Neither docker compose nor docker-compose is installed."
               exit 1
             fi
+
+            is_port_in_use() {
+              local port="$1"
+              ss -ltnH 2>/dev/null | awk '{print $4}' | grep -Eq ":${port}$"
+            }
+
+            POSTGRES_PORT="${{ secrets.POSTGRES_PORT || vars.POSTGRES_PORT }}"
+            if [ -z "$POSTGRES_PORT" ]; then
+              EXISTING_POSTGRES_PORT="$($COMPOSE_CMD port postgres 5432 2>/dev/null | head -n1 | awk -F: '{print $NF}')"
+              if [ -n "$EXISTING_POSTGRES_PORT" ]; then
+                POSTGRES_PORT="$EXISTING_POSTGRES_PORT"
+                echo "Reuse existing POSTGRES_PORT=$POSTGRES_PORT"
+              else
+                for candidate in 5432 5433 5434 5435 5436 5437 5438 5439 5440; do
+                  if ! is_port_in_use "$candidate"; then
+                    POSTGRES_PORT="$candidate"
+                    break
+                  fi
+                done
+
+                if [ -z "$POSTGRES_PORT" ]; then
+                  echo "No available PostgreSQL port found in range 5432-5440."
+                  echo "Set POSTGRES_PORT explicitly in GitHub Secret/Variable."
+                  exit 1
+                fi
+              fi
+            fi
+
+            export POSTGRES_PORT
+            echo "Deploy with POSTGRES_PORT=$POSTGRES_PORT"
+
+            $COMPOSE_CMD up -d --build --remove-orphans
