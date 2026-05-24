@@ -8,8 +8,13 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
       DisableHttpsRedirection: "true"
-      ApplyMigrationsOnStartup: "true"
+      EnableSwagger: ${ENABLE_SWAGGER:-false}
+      ApplyMigrationsOnStartup: ${APPLY_MIGRATIONS_ON_STARTUP:-false}
+      MigrationRetryCount: ${MIGRATION_RETRY_COUNT:-10}
+      MigrationRetryDelaySeconds: ${MIGRATION_RETRY_DELAY_SECONDS:-6}
+      FailStartupOnMigrationError: ${FAIL_STARTUP_ON_MIGRATION_ERROR:-false}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-ReCafeDb};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       Jwt__Key: ${JWT_KEY:-ThisIsASecretKeyForJWTR_Cafe_Backend_2026_SecureKey}
       Jwt__Issuer: ${JWT_ISSUER:-ReCafeBackend}
@@ -17,7 +22,12 @@ services:
       Jwt__DurationInMinutes: ${JWT_DURATION_MINUTES:-60}
     ports:
       - "${API_PORT:-5080}:8080"
-    restart: unless-stopped
+    restart: on-failure:5
+    stop_grace_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   postgres:
     image: postgres:16-alpine
@@ -33,13 +43,18 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ReCafeDb}",
+          "pg_isready -h 127.0.0.1 -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ReCafeDb}",
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
+    stop_grace_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   recafe_postgres_data:

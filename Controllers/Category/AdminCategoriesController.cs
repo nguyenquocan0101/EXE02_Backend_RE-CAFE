@@ -20,6 +20,17 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             _categoryService = categoryService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetCategories([FromQuery] bool? isActive = null)
+        {
+            var categories = await _categoryService.GetCategoriesForAdminAsync(isActive);
+            return Ok(SuccessResponse(
+                message: "Admin categories retrieved successfully.",
+                action: "GetAdminCategories",
+                data: categories,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
         {

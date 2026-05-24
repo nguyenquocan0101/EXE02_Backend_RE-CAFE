@@ -54,18 +54,52 @@ builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 
-var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("ApplyMigrationsOnStartup");
+var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("ApplyMigrationsOnStartup", false);
 if (applyMigrationsOnStartup)
 {
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    var maxMigrationRetries = builder.Configuration.GetValue<int>("MigrationRetryCount", 5);
+    var migrationRetryDelaySeconds = builder.Configuration.GetValue<int>("MigrationRetryDelaySeconds", 5);
+    var failStartupOnMigrationError = builder.Configuration.GetValue<bool>("FailStartupOnMigrationError", false);
+    var migrationsApplied = false;
+
+    for (var attempt = 1; attempt <= maxMigrationRetries; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            dbContext.Database.Migrate();
+            migrationsApplied = true;
+            app.Logger.LogInformation("Database migrations applied successfully.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Failed to apply database migrations on attempt {Attempt}/{MaxAttempts}.", attempt, maxMigrationRetries);
+
+            if (attempt < maxMigrationRetries)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(migrationRetryDelaySeconds));
+            }
+        }
+    }
+
+    if (!migrationsApplied)
+    {
+        if (failStartupOnMigrationError)
+        {
+            throw new InvalidOperationException("Failed to apply database migrations after all retry attempts.");
+        }
+
+        app.Logger.LogWarning("Continuing startup without applying database migrations.");
+    }
 }
 
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+var enableSwagger = builder.Configuration.GetValue<bool>("EnableSwagger", app.Environment.IsDevelopment());
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>

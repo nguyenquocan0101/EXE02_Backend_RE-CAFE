@@ -36,6 +36,28 @@ namespace EXE02_Backend_RE_CAFE.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<CategoryDto>> GetCategoriesForAdminAsync(bool? isActive = null)
+        {
+            var query = _context.Categories.AsQueryable();
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(c => c.IsActive == isActive.Value);
+            }
+
+            return await query
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Slug = c.Slug,
+                    Description = c.Description,
+                    IsActive = c.IsActive,
+                    CreatedAt = c.CreatedAt
+                })
+                .ToListAsync();
+        }
+
         public async Task<CategoryDto?> GetCategoryByIdAsync(Guid id)
         {
             var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
