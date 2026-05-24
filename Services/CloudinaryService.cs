@@ -13,7 +13,7 @@ namespace EXE02_Backend_RE_CAFE.Services
 {
     public class CloudinaryService : ICloudinaryService
     {
-        private readonly Cloudinary _cloudinary;
+        private readonly Cloudinary? _cloudinary;
         private readonly bool _isConfigured;
 
         public CloudinaryService(IOptions<CloudinarySettings> cloudinaryOptions)
@@ -23,12 +23,13 @@ namespace EXE02_Backend_RE_CAFE.Services
                             !string.IsNullOrWhiteSpace(settings.ApiKey) &&
                             !string.IsNullOrWhiteSpace(settings.ApiSecret);
 
-            _cloudinary = _isConfigured
-                ? new Cloudinary(new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret))
+            if (_isConfigured)
+            {
+                _cloudinary = new Cloudinary(new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret))
                 {
                     Api = { Secure = true }
-                }
-                : new Cloudinary(new Account(string.Empty, string.Empty, string.Empty));
+                };
+            }
         }
 
         public async Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder)
@@ -58,7 +59,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Overwrite = false
             };
 
-            var result = await _cloudinary.UploadAsync(uploadParams);
+            var result = await _cloudinary!.UploadAsync(uploadParams);
 
             if (result.Error != null)
             {
