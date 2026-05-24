@@ -15,10 +15,12 @@ namespace EXE02_Backend_RE_CAFE.Services
     {
         private const int MaxProductImages = 5;
         private readonly ApplicationDbContext _context;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProductService(ApplicationDbContext context)
+        public ProductService(ApplicationDbContext context, ICloudinaryService cloudinaryService)
         {
             _context = context;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<IEnumerable<ProductListDto>> GetActiveProductsAsync()
@@ -108,8 +110,8 @@ namespace EXE02_Backend_RE_CAFE.Services
 
         public async Task<ProductDetailDto?> CreateProductAsync(CreateProductRequest request)
         {
-            var normalizedImageUrls = NormalizeImageUrls(request.ImageUrls);
-            if (normalizedImageUrls.Count > MaxProductImages)
+            var newImageCount = request.ImageUrls?.Count ?? 0;
+            if (newImageCount > MaxProductImages)
             {
                 throw new BadRequestException($"A product can have at most {MaxProductImages} images.");
             }
@@ -130,6 +132,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists.");
             }
 
+            var uploadedImageUrls = await UploadImagesAsync(request.ImageUrls, "recafe/products");
+
             var product = new Product
             {
                 CategoryId = request.CategoryId,
@@ -149,13 +153,13 @@ namespace EXE02_Backend_RE_CAFE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            if (normalizedImageUrls.Count > 0)
+            if (uploadedImageUrls.Count > 0)
             {
-                for (var i = 0; i < normalizedImageUrls.Count; i++)
+                for (var i = 0; i < uploadedImageUrls.Count; i++)
                 {
                     product.ProductImages.Add(new ProductImage
                     {
-                        ImageUrl = normalizedImageUrls[i],
+                        ImageUrl = uploadedImageUrls[i],
                         IsThumbnail = i == 0,
                         SortOrder = i + 1
                     });
@@ -201,8 +205,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists on another product.");
             }
 
-            var normalizedImageUrls = NormalizeImageUrls(request.ImageUrls);
-            var newImageCount = normalizedImageUrls.Count;
+            var newImageCount = request.ImageUrls?.Count ?? 0;
             if (newImageCount > MaxProductImages)
             {
                 throw new BadRequestException($"A product can have at most {MaxProductImages} images.");
@@ -215,6 +218,8 @@ namespace EXE02_Backend_RE_CAFE.Services
             {
                 throw new BadRequestException($"A product can have at most {MaxProductImages} images after update.");
             }
+
+            var uploadedImageUrls = await UploadImagesAsync(request.ImageUrls, "recafe/products");
 
             product.CategoryId = request.CategoryId;
             product.Name = request.Name;
@@ -245,9 +250,9 @@ namespace EXE02_Backend_RE_CAFE.Services
                 nextSortOrder = 1;
             }
 
-            if (normalizedImageUrls.Count > 0)
+            if (uploadedImageUrls.Count > 0)
             {
-                var newImages = normalizedImageUrls
+                var newImages = uploadedImageUrls
                     .Select((url, index) => new ProductImage
                     {
                         ProductId = product.Id,
@@ -352,17 +357,21 @@ namespace EXE02_Backend_RE_CAFE.Services
             return true;
         }
 
-        private static List<string> NormalizeImageUrls(IReadOnlyCollection<string>? imageUrls)
+        private async Task<List<string>> UploadImagesAsync(IReadOnlyCollection<Microsoft.AspNetCore.Http.IFormFile>? imageFiles, string folder)
         {
-            if (imageUrls == null || imageUrls.Count == 0)
+            var imageUrls = new List<string>();
+            if (imageFiles == null || imageFiles.Count == 0)
             {
-                return new List<string>();
+                return imageUrls;
             }
 
-            return imageUrls
-                .Where(url => !string.IsNullOrWhiteSpace(url))
-                .Select(url => url.Trim())
-                .ToList();
+            foreach (var imageFile in imageFiles)
+            {
+                var (url, _) = await _cloudinaryService.UploadImageAsync(imageFile, folder);
+                imageUrls.Add(url);
+            }
+
+            return imageUrls;
         }
     }
 }
