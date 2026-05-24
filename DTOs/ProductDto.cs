@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 
 namespace EXE02_Backend_RE_CAFE.DTOs
 {
@@ -108,8 +107,8 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         [Range(0, int.MaxValue)]
         public int RewardPoints { get; set; } = 0;
 
-        public string? ImageFolder { get; set; }
-        public List<IFormFile>? Images { get; set; }
+        [MaxLength(5, ErrorMessage = "You can upload at most 5 images.")]
+        public List<string>? ImageUrls { get; set; }
     }
 
     public class UpdateProductRequest
@@ -159,7 +158,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public int RewardPoints { get; set; }
 
         public bool ReplaceImages { get; set; } = false;
-        public string? ImageFolder { get; set; }
-        public List<IFormFile>? Images { get; set; }
+        [MaxLength(5, ErrorMessage = "You can upload at most 5 images.")]
+        public List<string>? ImageUrls { get; set; }
     }
 }
