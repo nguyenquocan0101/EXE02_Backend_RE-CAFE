@@ -117,6 +117,9 @@ if (!disableHttpsRedirection)
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }))
+    .WithName("HealthCheck");
+
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"

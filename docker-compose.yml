@@ -10,8 +10,8 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       DisableHttpsRedirection: "true"
-      EnableSwagger: ${ENABLE_SWAGGER:-false}
-      ApplyMigrationsOnStartup: ${APPLY_MIGRATIONS_ON_STARTUP:-false}
+      EnableSwagger: ${ENABLE_SWAGGER:-true}
+      ApplyMigrationsOnStartup: ${APPLY_MIGRATIONS_ON_STARTUP:-true}
       MigrationRetryCount: ${MIGRATION_RETRY_COUNT:-10}
       MigrationRetryDelaySeconds: ${MIGRATION_RETRY_DELAY_SECONDS:-6}
       FailStartupOnMigrationError: ${FAIL_STARTUP_ON_MIGRATION_ERROR:-false}
