@@ -243,7 +243,6 @@ namespace EXE02_Backend_RE_CAFE.Services
                 }
             }
 
-            _context.Products.Update(product);
             await _context.SaveChangesAsync();
 
             var updatedProduct = await _context.Products
