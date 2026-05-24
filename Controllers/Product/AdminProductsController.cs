@@ -20,6 +20,17 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             _productService = productService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetProducts([FromQuery] bool? isActive = null)
+        {
+            var products = await _productService.GetProductsForAdminAsync(isActive);
+            return Ok(SuccessResponse(
+                message: "Admin products retrieved successfully.",
+                action: "GetAdminProducts",
+                data: products,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
         {

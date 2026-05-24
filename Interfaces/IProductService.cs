@@ -8,6 +8,7 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
     public interface IProductService
     {
         Task<IEnumerable<ProductListDto>> GetActiveProductsAsync();
+        Task<IEnumerable<ProductListDto>> GetProductsForAdminAsync(bool? isActive = null);
         Task<ProductDetailDto?> GetProductByIdAsync(Guid id);
         Task<ProductDetailDto?> CreateProductAsync(CreateProductRequest request);
         Task<ProductDetailDto?> UpdateProductAsync(Guid id, UpdateProductRequest request);

@@ -30,6 +30,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string Name { get; set; } = string.Empty;
         public string Slug { get; set; } = string.Empty;
         public string SKU { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
         public decimal Price { get; set; }
         public decimal? SalePrice { get; set; }
         public string? ShortDescription { get; set; }

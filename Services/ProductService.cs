@@ -32,6 +32,45 @@ namespace EXE02_Backend_RE_CAFE.Services
                     Name = p.Name,
                     Slug = p.Slug,
                     SKU = p.SKU,
+                    IsActive = p.IsActive,
+                    Price = p.Price,
+                    SalePrice = p.SalePrice,
+                    ShortDescription = p.ShortDescription,
+                    Size = p.Size,
+                    Material = p.Material,
+                    ThumbnailUrl = p.ProductImages
+                        .Where(img => img.IsThumbnail)
+                        .OrderBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault() ?? p.ProductImages
+                        .OrderBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault(),
+                    CategoryName = p.Category != null ? p.Category.Name : string.Empty
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductListDto>> GetProductsForAdminAsync(bool? isActive = null)
+        {
+            var query = _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .AsQueryable();
+
+            if (isActive.HasValue)
+            {
+                query = query.Where(p => p.IsActive == isActive.Value);
+            }
+
+            return await query
+                .Select(p => new ProductListDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Slug = p.Slug,
+                    SKU = p.SKU,
+                    IsActive = p.IsActive,
                     Price = p.Price,
                     SalePrice = p.SalePrice,
                     ShortDescription = p.ShortDescription,
