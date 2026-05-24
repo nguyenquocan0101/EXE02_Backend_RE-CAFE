@@ -218,29 +218,32 @@ namespace EXE02_Backend_RE_CAFE.Services
             product.RewardPoints = request.RewardPoints;
             product.UpdatedAt = DateTime.UtcNow;
 
+            var hasThumbnail = product.ProductImages.Any(i => i.IsThumbnail);
+            var nextSortOrder = product.ProductImages.Count == 0
+                ? 1
+                : product.ProductImages.Max(i => i.SortOrder) + 1;
+
             if (request.ReplaceImages)
             {
-                _context.ProductImages.RemoveRange(product.ProductImages);
-                product.ProductImages.Clear();
+                var existingImages = product.ProductImages.ToList();
+                _context.ProductImages.RemoveRange(existingImages);
+                hasThumbnail = false;
+                nextSortOrder = 1;
             }
 
             if (uploadedImageUrls.Count > 0)
             {
-                var nextSortOrder = product.ProductImages.Count == 0
-                    ? 1
-                    : product.ProductImages.Max(i => i.SortOrder) + 1;
-                var hasThumbnail = product.ProductImages.Any(i => i.IsThumbnail);
-
-                for (var i = 0; i < uploadedImageUrls.Count; i++)
-                {
-                    product.ProductImages.Add(new ProductImage
+                var newImages = uploadedImageUrls
+                    .Select((url, index) => new ProductImage
                     {
                         ProductId = product.Id,
-                        ImageUrl = uploadedImageUrls[i],
-                        SortOrder = nextSortOrder + i,
-                        IsThumbnail = !hasThumbnail && i == 0
-                    });
-                }
+                        ImageUrl = url,
+                        SortOrder = nextSortOrder + index,
+                        IsThumbnail = !hasThumbnail && index == 0
+                    })
+                    .ToList();
+
+                await _context.ProductImages.AddRangeAsync(newImages);
             }
 
             await _context.SaveChangesAsync();
