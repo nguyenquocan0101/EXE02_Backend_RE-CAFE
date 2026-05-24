@@ -14,10 +14,12 @@ namespace EXE02_Backend_RE_CAFE.Services
     public class ProductService : IProductService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public ProductService(ApplicationDbContext context)
+        public ProductService(ApplicationDbContext context, ICloudinaryService cloudinaryService)
         {
             _context = context;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<IEnumerable<ProductListDto>> GetActiveProductsAsync()
@@ -123,6 +125,9 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists.");
             }
 
+            var imageFolder = string.IsNullOrWhiteSpace(request.ImageFolder) ? "recafe/products" : request.ImageFolder.Trim();
+            var uploadedImageUrls = await UploadImagesAsync(request.Images, imageFolder);
+
             var product = new Product
             {
                 CategoryId = request.CategoryId,
@@ -142,6 +147,19 @@ namespace EXE02_Backend_RE_CAFE.Services
                 CreatedAt = DateTime.UtcNow
             };
 
+            if (uploadedImageUrls.Count > 0)
+            {
+                for (var i = 0; i < uploadedImageUrls.Count; i++)
+                {
+                    product.ProductImages.Add(new ProductImage
+                    {
+                        ImageUrl = uploadedImageUrls[i],
+                        IsThumbnail = i == 0,
+                        SortOrder = i + 1
+                    });
+                }
+            }
+
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
@@ -157,7 +175,9 @@ namespace EXE02_Backend_RE_CAFE.Services
 
         public async Task<ProductDetailDto?> UpdateProductAsync(Guid id, UpdateProductRequest request)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _context.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id);
             if (product == null)
             {
                 throw new NotFoundException($"Product with ID {id} not found.");
@@ -179,6 +199,9 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists on another product.");
             }
 
+            var imageFolder = string.IsNullOrWhiteSpace(request.ImageFolder) ? "recafe/products" : request.ImageFolder.Trim();
+            var uploadedImageUrls = await UploadImagesAsync(request.Images, imageFolder);
+
             product.CategoryId = request.CategoryId;
             product.Name = request.Name;
             product.Slug = request.Slug;
@@ -194,6 +217,31 @@ namespace EXE02_Backend_RE_CAFE.Services
             product.IsActive = request.IsActive;
             product.RewardPoints = request.RewardPoints;
             product.UpdatedAt = DateTime.UtcNow;
+
+            if (request.ReplaceImages)
+            {
+                _context.ProductImages.RemoveRange(product.ProductImages);
+                product.ProductImages.Clear();
+            }
+
+            if (uploadedImageUrls.Count > 0)
+            {
+                var nextSortOrder = product.ProductImages.Count == 0
+                    ? 1
+                    : product.ProductImages.Max(i => i.SortOrder) + 1;
+                var hasThumbnail = product.ProductImages.Any(i => i.IsThumbnail);
+
+                for (var i = 0; i < uploadedImageUrls.Count; i++)
+                {
+                    product.ProductImages.Add(new ProductImage
+                    {
+                        ProductId = product.Id,
+                        ImageUrl = uploadedImageUrls[i],
+                        SortOrder = nextSortOrder + i,
+                        IsThumbnail = !hasThumbnail && i == 0
+                    });
+                }
+            }
 
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
@@ -286,6 +334,23 @@ namespace EXE02_Backend_RE_CAFE.Services
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private async Task<List<string>> UploadImagesAsync(IReadOnlyCollection<Microsoft.AspNetCore.Http.IFormFile>? images, string folder)
+        {
+            var imageUrls = new List<string>();
+            if (images == null || images.Count == 0)
+            {
+                return imageUrls;
+            }
+
+            foreach (var image in images)
+            {
+                var (url, _) = await _cloudinaryService.UploadImageAsync(image, folder);
+                imageUrls.Add(url);
+            }
+
+            return imageUrls;
         }
     }
 }

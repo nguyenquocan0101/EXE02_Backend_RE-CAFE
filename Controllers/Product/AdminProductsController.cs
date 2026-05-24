@@ -32,7 +32,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateProduct([FromForm] CreateProductRequest request)
         {
             var product = await _productService.CreateProductAsync(request);
             if (product == null)
@@ -50,7 +51,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] UpdateProductRequest request)
         {
             var product = await _productService.UpdateProductAsync(id, request);
             if (product == null)

@@ -14,26 +14,30 @@ namespace EXE02_Backend_RE_CAFE.Services
     public class CloudinaryService : ICloudinaryService
     {
         private readonly Cloudinary _cloudinary;
+        private readonly bool _isConfigured;
 
         public CloudinaryService(IOptions<CloudinarySettings> cloudinaryOptions)
         {
             var settings = cloudinaryOptions.Value;
+            _isConfigured = !string.IsNullOrWhiteSpace(settings.CloudName) &&
+                            !string.IsNullOrWhiteSpace(settings.ApiKey) &&
+                            !string.IsNullOrWhiteSpace(settings.ApiSecret);
 
-            if (string.IsNullOrWhiteSpace(settings.CloudName) ||
-                string.IsNullOrWhiteSpace(settings.ApiKey) ||
-                string.IsNullOrWhiteSpace(settings.ApiSecret))
-            {
-                throw new InvalidOperationException("Cloudinary settings are missing. Please set Cloudinary:CloudName, Cloudinary:ApiKey and Cloudinary:ApiSecret.");
-            }
-
-            _cloudinary = new Cloudinary(new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret))
-            {
-                Api = { Secure = true }
-            };
+            _cloudinary = _isConfigured
+                ? new Cloudinary(new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret))
+                {
+                    Api = { Secure = true }
+                }
+                : new Cloudinary(new Account(string.Empty, string.Empty, string.Empty));
         }
 
         public async Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder)
         {
+            if (!_isConfigured)
+            {
+                throw new BadRequestException("Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.");
+            }
+
             if (file == null || file.Length == 0)
             {
                 throw new BadRequestException("File is required.");
