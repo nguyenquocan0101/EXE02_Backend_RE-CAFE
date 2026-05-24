@@ -1,12 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EXE02_Backend_RE_CAFE.DTOs;
-using EXE02_Backend_RE_CAFE.Exceptions;
 using EXE02_Backend_RE_CAFE.Interfaces;
 
 namespace EXE02_Backend_RE_CAFE.Controllers
@@ -36,15 +33,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
 
         [HttpPost]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> CreateProduct([FromForm] string payload, [FromForm] List<IFormFile>? imageUrls)
+        public async Task<IActionResult> CreateProduct([FromForm] CreateProductRequest request)
         {
-            var request = DeserializePayload<CreateProductRequest>(payload, "CreateProduct");
-            request.ImageUrls = imageUrls;
-            if (!TryValidateModel(request))
-            {
-                return ValidationProblem(ModelState);
-            }
-
             var product = await _productService.CreateProductAsync(request);
             if (product == null)
             {
@@ -62,15 +52,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
 
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] string payload, [FromForm] List<IFormFile>? imageUrls)
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] UpdateProductRequest request)
         {
-            var request = DeserializePayload<UpdateProductRequest>(payload, "UpdateProduct");
-            request.ImageUrls = imageUrls;
-            if (!TryValidateModel(request))
-            {
-                return ValidationProblem(ModelState);
-            }
-
             var product = await _productService.UpdateProductAsync(id, request);
             if (product == null)
             {
@@ -102,28 +85,6 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 action: "DeleteProduct",
                 data: null,
                 statusCode: StatusCodes.Status200OK));
-        }
-
-        private static T DeserializePayload<T>(string payload, string action) where T : class
-        {
-            if (string.IsNullOrWhiteSpace(payload))
-            {
-                throw new BadRequestException($"'{action}' requires a non-empty 'payload' JSON field.");
-            }
-
-            try
-            {
-                var model = JsonSerializer.Deserialize<T>(payload, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return model ?? throw new BadRequestException($"'{action}' payload JSON is invalid.");
-            }
-            catch (JsonException)
-            {
-                throw new BadRequestException($"'{action}' payload must be valid JSON.");
-            }
         }
     }
 }
