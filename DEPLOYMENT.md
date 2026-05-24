@@ -9,6 +9,7 @@ chmod +x deploy.sh
 ```
 
 Update values in `.env` (especially `POSTGRES_PASSWORD`, `JWT_KEY`) once.
+If using Cloudinary, also set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 
 ## Deploy every new push
 

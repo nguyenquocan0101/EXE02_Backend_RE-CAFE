@@ -8,6 +8,7 @@ using EXE02_Backend_RE_CAFE.Interfaces;
 using EXE02_Backend_RE_CAFE.Services;
 using EXE02_Backend_RE_CAFE.Middlewares;
 using EXE02_Backend_RE_CAFE.Extensions;
+using EXE02_Backend_RE_CAFE.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 
 // Configure DbContext with PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
