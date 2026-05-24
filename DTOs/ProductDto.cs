@@ -108,8 +108,6 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         [Range(0, int.MaxValue)]
         public int RewardPoints { get; set; } = 0;
 
-        [MaxLength(5, ErrorMessage = "You can upload at most 5 images.")]
-        public List<IFormFile>? ImageUrls { get; set; }
     }
 
     public class UpdateProductRequest
@@ -158,7 +156,12 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         [Range(0, int.MaxValue)]
         public int RewardPoints { get; set; }
 
+    }
+
+    public class UploadProductImagesRequest
+    {
         public bool ReplaceImages { get; set; } = false;
+
         [MaxLength(5, ErrorMessage = "You can upload at most 5 images.")]
         public List<IFormFile>? ImageUrls { get; set; }
     }

@@ -110,12 +110,6 @@ namespace EXE02_Backend_RE_CAFE.Services
 
         public async Task<ProductDetailDto?> CreateProductAsync(CreateProductRequest request)
         {
-            var newImageCount = request.ImageUrls?.Count ?? 0;
-            if (newImageCount > MaxProductImages)
-            {
-                throw new BadRequestException($"A product can have at most {MaxProductImages} images.");
-            }
-
             var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId);
             if (!categoryExists)
             {
@@ -131,8 +125,6 @@ namespace EXE02_Backend_RE_CAFE.Services
             {
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists.");
             }
-
-            var uploadedImageUrls = await UploadImagesAsync(request.ImageUrls, "recafe/products");
 
             var product = new Product
             {
@@ -152,19 +144,6 @@ namespace EXE02_Backend_RE_CAFE.Services
                 RewardPoints = request.RewardPoints,
                 CreatedAt = DateTime.UtcNow
             };
-
-            if (uploadedImageUrls.Count > 0)
-            {
-                for (var i = 0; i < uploadedImageUrls.Count; i++)
-                {
-                    product.ProductImages.Add(new ProductImage
-                    {
-                        ImageUrl = uploadedImageUrls[i],
-                        IsThumbnail = i == 0,
-                        SortOrder = i + 1
-                    });
-                }
-            }
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -205,22 +184,6 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException($"Product with Slug '{request.Slug}' already exists on another product.");
             }
 
-            var newImageCount = request.ImageUrls?.Count ?? 0;
-            if (newImageCount > MaxProductImages)
-            {
-                throw new BadRequestException($"A product can have at most {MaxProductImages} images.");
-            }
-
-            var totalImagesAfterUpdate = request.ReplaceImages
-                ? newImageCount
-                : product.ProductImages.Count + newImageCount;
-            if (totalImagesAfterUpdate > MaxProductImages)
-            {
-                throw new BadRequestException($"A product can have at most {MaxProductImages} images after update.");
-            }
-
-            var uploadedImageUrls = await UploadImagesAsync(request.ImageUrls, "recafe/products");
-
             product.CategoryId = request.CategoryId;
             product.Name = request.Name;
             product.Slug = request.Slug;
@@ -236,6 +199,43 @@ namespace EXE02_Backend_RE_CAFE.Services
             product.IsActive = request.IsActive;
             product.RewardPoints = request.RewardPoints;
             product.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            var updatedProduct = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            return MapToDetailDto(updatedProduct!);
+        }
+
+        public async Task<ProductDetailDto?> UploadProductImagesAsync(Guid id, UploadProductImagesRequest request)
+        {
+            var product = await _context.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null)
+            {
+                throw new NotFoundException($"Product with ID {id} not found.");
+            }
+
+            var newImageCount = request.ImageUrls?.Count ?? 0;
+            if (newImageCount > MaxProductImages)
+            {
+                throw new BadRequestException($"A product can have at most {MaxProductImages} images.");
+            }
+
+            var totalImagesAfterUpdate = request.ReplaceImages
+                ? newImageCount
+                : product.ProductImages.Count + newImageCount;
+            if (totalImagesAfterUpdate > MaxProductImages)
+            {
+                throw new BadRequestException($"A product can have at most {MaxProductImages} images after update.");
+            }
+
+            var uploadedImageUrls = await UploadImagesAsync(request.ImageUrls, "recafe/products");
 
             var hasThumbnail = product.ProductImages.Any(i => i.IsThumbnail);
             var nextSortOrder = product.ProductImages.Count == 0
@@ -265,6 +265,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                 await _context.ProductImages.AddRangeAsync(newImages);
             }
 
+            product.UpdatedAt = DateTime.UtcNow;
+            _context.Products.Update(product);
             await _context.SaveChangesAsync();
 
             var updatedProduct = await _context.Products

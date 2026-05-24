@@ -32,8 +32,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         }
 
         [HttpPost]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> CreateProduct([FromForm] CreateProductRequest request)
+        [Consumes("application/json")]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
         {
             var product = await _productService.CreateProductAsync(request);
             if (product == null)
@@ -51,8 +51,8 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         }
 
         [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] UpdateProductRequest request)
+        [Consumes("application/json")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
         {
             var product = await _productService.UpdateProductAsync(id, request);
             if (product == null)
@@ -65,6 +65,26 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             return Ok(SuccessResponse(
                 message: "Product updated successfully.",
                 action: "UpdateProduct",
+                data: product,
+                statusCode: StatusCodes.Status200OK));
+        }
+
+        [HttpPost("{id}/images")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProductImages(Guid id, [FromForm] UploadProductImagesRequest request)
+        {
+            var product = await _productService.UploadProductImagesAsync(id, request);
+            if (product == null)
+            {
+                return BadRequest(ErrorResponse<object>(
+                    message: "Failed to upload product images.",
+                    action: "UploadProductImages",
+                    statusCode: StatusCodes.Status400BadRequest));
+            }
+
+            return Ok(SuccessResponse(
+                message: "Product images uploaded successfully.",
+                action: "UploadProductImages",
                 data: product,
                 statusCode: StatusCodes.Status200OK));
         }
