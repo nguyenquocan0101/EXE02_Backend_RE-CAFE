@@ -35,6 +35,16 @@ namespace EXE02_Backend_RE_CAFE.Services
                 throw new BadRequestException("Your shopping cart is empty. Cannot place an order.");
             }
 
+            var itemsToOrder = cart.CartItems.ToList();
+            if (request.CartItemIds != null && request.CartItemIds.Any())
+            {
+                itemsToOrder = cart.CartItems.Where(ci => request.CartItemIds.Contains(ci.Id)).ToList();
+                if (!itemsToOrder.Any())
+                {
+                    throw new BadRequestException("None of the selected items were found in your cart.");
+                }
+            }
+
             // 2. Validate shipping address
             var address = await _context.Addresses
                 .FirstOrDefaultAsync(a => a.Id == request.ShippingAddressId && a.UserId == userId);
@@ -48,7 +58,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             decimal subtotal = 0;
             var orderItemsList = new List<OrderItem>();
 
-            foreach (var item in cart.CartItems)
+            foreach (var item in itemsToOrder)
             {
                 if (item.Product == null || !item.Product.IsActive)
                 {
@@ -175,9 +185,12 @@ namespace EXE02_Backend_RE_CAFE.Services
 
             _context.Orders.Add(order);
 
-            // 6. Clear shopping cart
-            _context.CartItems.RemoveRange(cart.CartItems);
-            cart.CartItems.Clear();
+            // 6. Clear selected shopping cart items
+            _context.CartItems.RemoveRange(itemsToOrder);
+            foreach (var item in itemsToOrder)
+            {
+                cart.CartItems.Remove(item);
+            }
             _context.Carts.Update(cart);
 
             await _context.SaveChangesAsync();

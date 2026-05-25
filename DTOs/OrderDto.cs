@@ -57,6 +57,8 @@ namespace EXE02_Backend_RE_CAFE.DTOs
 
         [StringLength(50)]
         public string? CouponCode { get; set; }
+
+        public List<Guid>? CartItemIds { get; set; }
     }
 
     public class UpdateOrderStatusRequest
