@@ -21,6 +21,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public DateTime CreatedAt { get; set; }
         public string? CouponCode { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
+        public string? PaymentQrUrl { get; set; }
     }
 
     public class OrderItemDto

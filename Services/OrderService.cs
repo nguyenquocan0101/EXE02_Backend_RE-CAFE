@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using EXE02_Backend_RE_CAFE.Data;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -14,10 +15,12 @@ namespace EXE02_Backend_RE_CAFE.Services
     public class OrderService : IOrderService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPaymentService _paymentService;
 
-        public OrderService(ApplicationDbContext context)
+        public OrderService(ApplicationDbContext context, IPaymentService paymentService)
         {
             _context = context;
+            _paymentService = paymentService;
         }
 
         public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -379,7 +382,7 @@ namespace EXE02_Backend_RE_CAFE.Services
 
         private OrderDto MapToDto(Order order)
         {
-            return new OrderDto
+            var dto = new OrderDto
             {
                 Id = order.Id,
                 UserId = order.UserId,
@@ -417,6 +420,13 @@ namespace EXE02_Backend_RE_CAFE.Services
                     PersonalizationNote = oi.PersonalizationNote
                 }).ToList()
             };
+
+            if (order.PaymentStatus == PaymentStatus.Unpaid)
+            {
+                dto.PaymentQrUrl = _paymentService.GetPaymentQrUrl(order.OrderCode, order.TotalAmount);
+            }
+
+            return dto;
         }
     }
 }
