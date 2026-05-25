@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using EXE02_Backend_RE_CAFE.Models;
 
 namespace EXE02_Backend_RE_CAFE.DTOs
 {
@@ -22,6 +23,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string? CouponCode { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
         public string? PaymentQrUrl { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
     }
 
     public class OrderItemDto
@@ -58,6 +60,9 @@ namespace EXE02_Backend_RE_CAFE.DTOs
 
         [StringLength(50)]
         public string? CouponCode { get; set; }
+
+        [Required]
+        public PaymentMethod PaymentMethod { get; set; }
 
         public List<Guid>? CartItemIds { get; set; }
     }

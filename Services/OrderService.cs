@@ -176,7 +176,13 @@ namespace EXE02_Backend_RE_CAFE.Services
                 PaymentStatus = PaymentStatus.Unpaid,
                 Note = request.Note,
                 CreatedAt = DateTime.UtcNow,
-                CouponId = coupon?.Id
+                CouponId = coupon?.Id,
+                Payment = new Payment
+                {
+                    Method = request.PaymentMethod,
+                    Status = PaymentStatus.Unpaid,
+                    Amount = totalAmount
+                }
             };
 
             foreach (var orderItem in orderItemsList)
@@ -202,6 +208,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var createdOrder = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .FirstOrDefaultAsync(o => o.Id == order.Id);
@@ -214,6 +221,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var orders = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .Where(o => o.UserId == userId)
@@ -228,6 +236,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var order = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
@@ -284,6 +293,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var updatedOrder = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -296,6 +306,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var orders = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .OrderByDescending(o => o.CreatedAt)
@@ -309,6 +320,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var order = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -343,6 +355,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 var currentOrder = await _context.Orders
                     .Include(o => o.ShippingAddress)
                     .Include(o => o.Coupon)
+                    .Include(o => o.Payment)
                     .Include(o => o.OrderItems)
                         .ThenInclude(oi => oi.Variant)
                     .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -373,6 +386,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var updatedOrder = await _context.Orders
                 .Include(o => o.ShippingAddress)
                 .Include(o => o.Coupon)
+                .Include(o => o.Payment)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Variant)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -397,6 +411,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Note = order.Note,
                 CreatedAt = order.CreatedAt,
                 CouponCode = order.Coupon?.Code,
+                PaymentMethod = order.Payment != null ? order.Payment.Method.ToString() : string.Empty,
                 ShippingAddress = order.ShippingAddress != null ? new OrderAddressDto
                 {
                     Id = order.ShippingAddress.Id,
@@ -421,7 +436,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 }).ToList()
             };
 
-            if (order.PaymentStatus == PaymentStatus.Unpaid)
+            if (order.PaymentStatus == PaymentStatus.Unpaid && order.Payment != null && order.Payment.Method == PaymentMethod.BankTransfer)
             {
                 dto.PaymentQrUrl = _paymentService.GetPaymentQrUrl(order.OrderCode, order.TotalAmount);
             }

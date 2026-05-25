@@ -79,16 +79,27 @@ namespace EXE02_Backend_RE_CAFE.Services
             order.Status = OrderStatus.Confirmed;
             _context.Orders.Update(order);
 
-            var payment = new Payment
+            if (order.Payment != null)
             {
-                OrderId = order.Id,
-                Method = PaymentMethod.BankTransfer,
-                Status = PaymentStatus.Paid,
-                Amount = request.TransferAmount,
-                TransactionCode = request.ReferenceCode ?? request.Id.ToString(),
-                PaidAt = request.TransactionDate ?? DateTime.UtcNow
-            };
-            _context.Payments.Add(payment);
+                order.Payment.Status = PaymentStatus.Paid;
+                order.Payment.Amount = request.TransferAmount;
+                order.Payment.TransactionCode = request.ReferenceCode ?? request.Id.ToString();
+                order.Payment.PaidAt = request.TransactionDate ?? DateTime.UtcNow;
+                _context.Payments.Update(order.Payment);
+            }
+            else
+            {
+                var payment = new Payment
+                {
+                    OrderId = order.Id,
+                    Method = PaymentMethod.BankTransfer,
+                    Status = PaymentStatus.Paid,
+                    Amount = request.TransferAmount,
+                    TransactionCode = request.ReferenceCode ?? request.Id.ToString(),
+                    PaidAt = request.TransactionDate ?? DateTime.UtcNow
+                };
+                _context.Payments.Add(payment);
+            }
 
             await _context.SaveChangesAsync();
 
