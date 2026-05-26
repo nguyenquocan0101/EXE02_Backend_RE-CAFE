@@ -49,6 +49,11 @@ namespace EXE02_Backend_RE_CAFE.Services
             }
 
             // 2. Validate shipping address
+            if (request.ShippingAddressId == Guid.Empty)
+            {
+                throw new BadRequestException("ShippingAddressId is required. Please select a valid shipping address.");
+            }
+
             var address = await _context.Addresses
                 .FirstOrDefaultAsync(a => a.Id == request.ShippingAddressId && a.UserId == userId);
 
