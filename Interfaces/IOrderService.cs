@@ -9,6 +9,7 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
     {
         // User Operations
         Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request);
+        Task<OrderDto> CheckoutAsync(Guid userId, CheckoutOrderRequest request);
         Task<IEnumerable<OrderDto>> GetMyOrdersAsync(Guid userId);
         Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId);
         Task<OrderDto> CancelOrderAsync(Guid userId, Guid orderId);

@@ -67,6 +67,23 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public List<Guid>? CartItemIds { get; set; }
     }
 
+    public class CheckoutOrderRequest
+    {
+        [Required]
+        public CreateAddressRequest ShippingAddress { get; set; } = new CreateAddressRequest();
+
+        [StringLength(500)]
+        public string? Note { get; set; }
+
+        [StringLength(50)]
+        public string? CouponCode { get; set; }
+
+        [Required]
+        public PaymentMethod PaymentMethod { get; set; }
+
+        public List<Guid>? CartItemIds { get; set; }
+    }
+
     public class UpdateOrderStatusRequest
     {
         [Required]

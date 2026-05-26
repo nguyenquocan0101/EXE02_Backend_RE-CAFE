@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using EXE02_Backend_RE_CAFE.Data;
 using EXE02_Backend_RE_CAFE.DTOs;
 using EXE02_Backend_RE_CAFE.Interfaces;
@@ -16,11 +15,13 @@ namespace EXE02_Backend_RE_CAFE.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IPaymentService _paymentService;
+        private readonly IAddressService _addressService;
 
-        public OrderService(ApplicationDbContext context, IPaymentService paymentService)
+        public OrderService(ApplicationDbContext context, IPaymentService paymentService, IAddressService addressService)
         {
             _context = context;
             _paymentService = paymentService;
+            _addressService = addressService;
         }
 
         public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -219,6 +220,33 @@ namespace EXE02_Backend_RE_CAFE.Services
                 .FirstOrDefaultAsync(o => o.Id == order.Id);
 
             return MapToDto(createdOrder!);
+        }
+
+        public async Task<OrderDto> CheckoutAsync(Guid userId, CheckoutOrderRequest request)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var createdAddress = await _addressService.CreateAddressAsync(userId, request.ShippingAddress);
+                var createOrderRequest = new CreateOrderRequest
+                {
+                    ShippingAddressId = createdAddress.Id,
+                    Note = request.Note,
+                    CouponCode = request.CouponCode,
+                    PaymentMethod = request.PaymentMethod,
+                    CartItemIds = request.CartItemIds
+                };
+
+                var order = await CreateOrderAsync(userId, createOrderRequest);
+                await transaction.CommitAsync();
+                return order;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<IEnumerable<OrderDto>> GetMyOrdersAsync(Guid userId)

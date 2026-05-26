@@ -44,6 +44,18 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status201Created));
         }
 
+        [HttpPost("checkout")]
+        public async Task<IActionResult> Checkout([FromBody] CheckoutOrderRequest request)
+        {
+            var userId = GetUserId();
+            var order = await _orderService.CheckoutAsync(userId, request);
+            return StatusCode(StatusCodes.Status201Created, SuccessResponse(
+                message: "Checkout completed successfully.",
+                action: "Checkout",
+                data: order,
+                statusCode: StatusCodes.Status201Created));
+        }
+
         [HttpGet("my-orders")]
         public async Task<IActionResult> GetMyOrders()
         {
