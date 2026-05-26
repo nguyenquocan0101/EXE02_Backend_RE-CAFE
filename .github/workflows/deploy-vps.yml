@@ -23,32 +23,50 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
           VPS_USERNAME: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD }}
         run: |
           set -euo pipefail
           [ -n "$VPS_HOST" ] || { echo "::error::Missing VPS_HOST (set either Repository Secret or Repository Variable)"; exit 1; }
           [ -n "$VPS_USERNAME" ] || { echo "::error::Missing VPS_USERNAME (set either Repository Secret or Repository Variable)"; exit 1; }
           [ -n "$VPS_SSH_KEY" ] || { echo "::error::Missing repository secret VPS_SSH_KEY"; exit 1; }
+          [ -n "$POSTGRES_PASSWORD" ] || { echo "::error::Missing POSTGRES_PASSWORD (Repository Secret/Variable)."; exit 1; }
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          INPUT_DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || vars.DEPLOY_PATH }}
+          INPUT_DEPLOY_REPO_URL: ${{ secrets.DEPLOY_REPO_URL || vars.DEPLOY_REPO_URL }}
+          INPUT_API_PORT: ${{ secrets.API_PORT || vars.API_PORT }}
+          INPUT_ASPNETCORE_ENVIRONMENT: ${{ secrets.ASPNETCORE_ENVIRONMENT || vars.ASPNETCORE_ENVIRONMENT }}
+          INPUT_ENABLE_SWAGGER: ${{ secrets.ENABLE_SWAGGER || vars.ENABLE_SWAGGER }}
+          INPUT_POSTGRES_DB: ${{ secrets.POSTGRES_DB || vars.POSTGRES_DB }}
+          INPUT_POSTGRES_USER: ${{ secrets.POSTGRES_USER || vars.POSTGRES_USER }}
+          INPUT_POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD }}
+          INPUT_POSTGRES_PORT: ${{ secrets.POSTGRES_PORT || vars.POSTGRES_PORT }}
+          INPUT_APPLY_MIGRATIONS_ON_STARTUP: ${{ secrets.APPLY_MIGRATIONS_ON_STARTUP || vars.APPLY_MIGRATIONS_ON_STARTUP }}
+          INPUT_MIGRATION_RETRY_COUNT: ${{ secrets.MIGRATION_RETRY_COUNT || vars.MIGRATION_RETRY_COUNT }}
+          INPUT_MIGRATION_RETRY_DELAY_SECONDS: ${{ secrets.MIGRATION_RETRY_DELAY_SECONDS || vars.MIGRATION_RETRY_DELAY_SECONDS }}
+          INPUT_FAIL_STARTUP_ON_MIGRATION_ERROR: ${{ secrets.FAIL_STARTUP_ON_MIGRATION_ERROR || vars.FAIL_STARTUP_ON_MIGRATION_ERROR }}
+          INPUT_JWT_KEY: ${{ secrets.JWT_KEY || vars.JWT_KEY }}
+          INPUT_JWT_ISSUER: ${{ secrets.JWT_ISSUER || vars.JWT_ISSUER }}
+          INPUT_JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE || vars.JWT_AUDIENCE }}
+          INPUT_JWT_DURATION_MINUTES: ${{ secrets.JWT_DURATION_MINUTES || vars.JWT_DURATION_MINUTES }}
+          INPUT_CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS || vars.CORS_ALLOWED_ORIGINS }}
+          INPUT_CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME || vars.CLOUDINARY_CLOUD_NAME }}
+          INPUT_CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY || vars.CLOUDINARY_API_KEY }}
+          INPUT_CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET || vars.CLOUDINARY_API_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || vars.VPS_PORT || '22' }}
           command_timeout: 20m
+          envs: INPUT_DEPLOY_PATH,INPUT_DEPLOY_REPO_URL,INPUT_API_PORT,INPUT_ASPNETCORE_ENVIRONMENT,INPUT_ENABLE_SWAGGER,INPUT_POSTGRES_DB,INPUT_POSTGRES_USER,INPUT_POSTGRES_PASSWORD,INPUT_POSTGRES_PORT,INPUT_APPLY_MIGRATIONS_ON_STARTUP,INPUT_MIGRATION_RETRY_COUNT,INPUT_MIGRATION_RETRY_DELAY_SECONDS,INPUT_FAIL_STARTUP_ON_MIGRATION_ERROR,INPUT_JWT_KEY,INPUT_JWT_ISSUER,INPUT_JWT_AUDIENCE,INPUT_JWT_DURATION_MINUTES,INPUT_CORS_ALLOWED_ORIGINS,INPUT_CLOUDINARY_CLOUD_NAME,INPUT_CLOUDINARY_API_KEY,INPUT_CLOUDINARY_API_SECRET
           script: |
             set -euo pipefail
 
-            DEPLOY_PATH="${{ secrets.DEPLOY_PATH || vars.DEPLOY_PATH }}"
-            if [ -z "$DEPLOY_PATH" ]; then
-              DEPLOY_PATH="/opt/EXE02_Backend_RE-CAFE"
-            fi
-
-            REPO_URL="${{ secrets.DEPLOY_REPO_URL || vars.DEPLOY_REPO_URL }}"
-            if [ -z "$REPO_URL" ]; then
-              REPO_URL="https://github.com/${{ github.repository }}.git"
-            fi
+            DEPLOY_PATH="${INPUT_DEPLOY_PATH:-/opt/EXE02_Backend_RE-CAFE}"
+            REPO_URL="${INPUT_DEPLOY_REPO_URL:-https://github.com/${{ github.repository }}.git}"
 
             if [ ! -d "$DEPLOY_PATH/.git" ]; then
               if ! mkdir -p "$DEPLOY_PATH" 2>/dev/null; then
@@ -72,34 +90,97 @@ jobs:
               exit 1
             fi
 
-            is_port_in_use() {
-              local port="$1"
-              ss -ltnH 2>/dev/null | awk '{print $4}' | grep -Eq ":${port}$"
-            }
-
-            POSTGRES_PORT="${{ secrets.POSTGRES_PORT || vars.POSTGRES_PORT }}"
-            if [ -z "$POSTGRES_PORT" ]; then
-              EXISTING_POSTGRES_PORT="$($COMPOSE_CMD port postgres 5432 2>/dev/null | head -n1 | awk -F: '{print $NF}')"
-              if [ -n "$EXISTING_POSTGRES_PORT" ]; then
-                POSTGRES_PORT="$EXISTING_POSTGRES_PORT"
-                echo "Reuse existing POSTGRES_PORT=$POSTGRES_PORT"
-              else
-                for candidate in 5432 5433 5434 5435 5436 5437 5438 5439 5440; do
-                  if ! is_port_in_use "$candidate"; then
-                    POSTGRES_PORT="$candidate"
-                    break
-                  fi
-                done
-
-                if [ -z "$POSTGRES_PORT" ]; then
-                  echo "No available PostgreSQL port found in range 5432-5440."
-                  echo "Set POSTGRES_PORT explicitly in GitHub Secret/Variable."
-                  exit 1
-                fi
-              fi
+            if [ -f .env ]; then
+              set -a
+              . ./.env
+              set +a
             fi
 
-            export POSTGRES_PORT
-            echo "Deploy with POSTGRES_PORT=$POSTGRES_PORT"
+            API_PORT="${INPUT_API_PORT:-${API_PORT:-5080}}"
+            ASPNETCORE_ENVIRONMENT="${INPUT_ASPNETCORE_ENVIRONMENT:-${ASPNETCORE_ENVIRONMENT:-Production}}"
+            ENABLE_SWAGGER="${INPUT_ENABLE_SWAGGER:-${ENABLE_SWAGGER:-true}}"
+            POSTGRES_DB="${INPUT_POSTGRES_DB:-${POSTGRES_DB:-ReCafeDb}}"
+            POSTGRES_USER="${INPUT_POSTGRES_USER:-${POSTGRES_USER:-postgres}}"
+            POSTGRES_PASSWORD="${INPUT_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD:-}}"
+            POSTGRES_PORT="${INPUT_POSTGRES_PORT:-${POSTGRES_PORT:-5432}}"
+            APPLY_MIGRATIONS_ON_STARTUP="${INPUT_APPLY_MIGRATIONS_ON_STARTUP:-${APPLY_MIGRATIONS_ON_STARTUP:-true}}"
+            MIGRATION_RETRY_COUNT="${INPUT_MIGRATION_RETRY_COUNT:-${MIGRATION_RETRY_COUNT:-10}}"
+            MIGRATION_RETRY_DELAY_SECONDS="${INPUT_MIGRATION_RETRY_DELAY_SECONDS:-${MIGRATION_RETRY_DELAY_SECONDS:-6}}"
+            FAIL_STARTUP_ON_MIGRATION_ERROR="${INPUT_FAIL_STARTUP_ON_MIGRATION_ERROR:-${FAIL_STARTUP_ON_MIGRATION_ERROR:-false}}"
+            JWT_KEY="${INPUT_JWT_KEY:-${JWT_KEY:-ThisIsASecretKeyForJWTR_Cafe_Backend_2026_SecureKey}}"
+            JWT_ISSUER="${INPUT_JWT_ISSUER:-${JWT_ISSUER:-ReCafeBackend}}"
+            JWT_AUDIENCE="${INPUT_JWT_AUDIENCE:-${JWT_AUDIENCE:-ReCafeUsers}}"
+            JWT_DURATION_MINUTES="${INPUT_JWT_DURATION_MINUTES:-${JWT_DURATION_MINUTES:-60}}"
+            CORS_ALLOWED_ORIGINS="${INPUT_CORS_ALLOWED_ORIGINS:-${CORS_ALLOWED_ORIGINS:-https://recafe.site,https://www.recafe.site}}"
+            CLOUDINARY_CLOUD_NAME="${INPUT_CLOUDINARY_CLOUD_NAME:-${CLOUDINARY_CLOUD_NAME:-}}"
+            CLOUDINARY_API_KEY="${INPUT_CLOUDINARY_API_KEY:-${CLOUDINARY_API_KEY:-}}"
+            CLOUDINARY_API_SECRET="${INPUT_CLOUDINARY_API_SECRET:-${CLOUDINARY_API_SECRET:-}}"
 
-            $COMPOSE_CMD up -d --build --remove-orphans
+            if [ -z "$POSTGRES_PASSWORD" ]; then
+              echo "POSTGRES_PASSWORD is empty. Set it in GitHub Secret/Variable."
+              exit 1
+            fi
+
+            escape_env_value() {
+              printf '%s' "$1" | sed "s/'/'\"'\"'/g"
+            }
+
+            write_env() {
+              local key="$1"
+              local value
+              value="$(escape_env_value "$2")"
+              printf "%s='%s'\n" "$key" "$value" >> .env
+            }
+
+            : > .env
+            write_env API_PORT "$API_PORT"
+            write_env ASPNETCORE_ENVIRONMENT "$ASPNETCORE_ENVIRONMENT"
+            write_env ENABLE_SWAGGER "$ENABLE_SWAGGER"
+            write_env POSTGRES_DB "$POSTGRES_DB"
+            write_env POSTGRES_USER "$POSTGRES_USER"
+            write_env POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
+            write_env POSTGRES_PORT "$POSTGRES_PORT"
+            write_env APPLY_MIGRATIONS_ON_STARTUP "$APPLY_MIGRATIONS_ON_STARTUP"
+            write_env MIGRATION_RETRY_COUNT "$MIGRATION_RETRY_COUNT"
+            write_env MIGRATION_RETRY_DELAY_SECONDS "$MIGRATION_RETRY_DELAY_SECONDS"
+            write_env FAIL_STARTUP_ON_MIGRATION_ERROR "$FAIL_STARTUP_ON_MIGRATION_ERROR"
+            write_env JWT_KEY "$JWT_KEY"
+            write_env JWT_ISSUER "$JWT_ISSUER"
+            write_env JWT_AUDIENCE "$JWT_AUDIENCE"
+            write_env JWT_DURATION_MINUTES "$JWT_DURATION_MINUTES"
+            write_env CORS_ALLOWED_ORIGINS "$CORS_ALLOWED_ORIGINS"
+            write_env CLOUDINARY_CLOUD_NAME "$CLOUDINARY_CLOUD_NAME"
+            write_env CLOUDINARY_API_KEY "$CLOUDINARY_API_KEY"
+            write_env CLOUDINARY_API_SECRET "$CLOUDINARY_API_SECRET"
+
+            $COMPOSE_CMD --env-file .env up -d postgres
+
+            POSTGRES_CONTAINER_ID="$($COMPOSE_CMD --env-file .env ps -q postgres)"
+            if [ -z "$POSTGRES_CONTAINER_ID" ]; then
+              echo "Cannot find postgres container id."
+              exit 1
+            fi
+
+            for _ in {1..60}; do
+              STATUS="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$POSTGRES_CONTAINER_ID" 2>/dev/null || true)"
+              if [ "$STATUS" = "healthy" ]; then
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "${STATUS:-}" != "healthy" ]; then
+              echo "Postgres is not healthy (status=${STATUS:-unknown})."
+              $COMPOSE_CMD --env-file .env logs --tail=80 postgres || true
+              exit 1
+            fi
+
+            ESCAPED_POSTGRES_PASSWORD="${POSTGRES_PASSWORD//\'/\'\'}"
+            $COMPOSE_CMD --env-file .env exec -T postgres \
+              psql -v ON_ERROR_STOP=1 \
+              -U "$POSTGRES_USER" \
+              -d postgres \
+              -c "ALTER USER \"$POSTGRES_USER\" WITH PASSWORD '$ESCAPED_POSTGRES_PASSWORD';"
+
+            $COMPOSE_CMD --env-file .env up -d --build --remove-orphans
+            $COMPOSE_CMD --env-file .env ps
