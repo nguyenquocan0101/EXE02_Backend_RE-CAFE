@@ -73,5 +73,42 @@ namespace EXE02_Backend_RE_CAFE.Services
 
             return (result.SecureUrl.ToString(), result.PublicId);
         }
+
+        public async Task<(string Url, string PublicId)> UploadRawFileAsync(IFormFile file, string folder)
+        {
+            if (!_isConfigured)
+            {
+                throw new BadRequestException("Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET.");
+            }
+
+            if (file == null || file.Length == 0)
+            {
+                throw new BadRequestException("File is required.");
+            }
+
+            await using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folder,
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var result = await _cloudinary!.UploadAsync(uploadParams);
+
+            if (result.Error != null)
+            {
+                throw new BadRequestException($"Cloudinary raw upload failed: {result.Error.Message}");
+            }
+
+            if (result.SecureUrl == null || string.IsNullOrWhiteSpace(result.PublicId))
+            {
+                throw new BadRequestException("Cloudinary raw upload failed to return valid URL.");
+            }
+
+            return (result.SecureUrl.ToString(), result.PublicId);
+        }
     }
 }

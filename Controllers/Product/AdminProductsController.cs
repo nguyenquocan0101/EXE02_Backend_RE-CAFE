@@ -89,6 +89,26 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status200OK));
         }
 
+        [HttpPost("{id}/model-3d")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProductModel3D(Guid id, [FromForm] UploadProductModel3DRequest request)
+        {
+            var product = await _productService.UploadProductModel3DAsync(id, request);
+            if (product == null)
+            {
+                return BadRequest(ErrorResponse<object>(
+                    message: "Failed to upload product 3D model.",
+                    action: "UploadProductModel3D",
+                    statusCode: StatusCodes.Status400BadRequest));
+            }
+
+            return Ok(SuccessResponse(
+                message: "Product 3D model uploaded successfully.",
+                action: "UploadProductModel3D",
+                data: product,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {

@@ -38,6 +38,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string? Size { get; set; }
         public string? Material { get; set; }
         public string? ThumbnailUrl { get; set; }
+        public string? Model3DUrl { get; set; }
         public string CategoryName { get; set; } = string.Empty;
     }
 
@@ -55,6 +56,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string? Material { get; set; }
         public string? Size { get; set; }
         public string? UsageNote { get; set; }
+        public string? Model3DUrl { get; set; }
         public bool IsPersonalizable { get; set; }
         public int RewardPoints { get; set; }
         public CategoryDto? Category { get; set; }
@@ -164,5 +166,11 @@ namespace EXE02_Backend_RE_CAFE.DTOs
 
         [MaxLength(5, ErrorMessage = "You can upload at most 5 images.")]
         public List<IFormFile>? ImageUrls { get; set; }
+    }
+
+    public class UploadProductModel3DRequest
+    {
+        [Required]
+        public IFormFile File { get; set; } = default!;
     }
 }

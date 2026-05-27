@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,13 @@ namespace EXE02_Backend_RE_CAFE.Services
     public class ProductService : IProductService
     {
         private const int MaxProductImages = 5;
+        private const long MaxModel3DFileSizeBytes = 25 * 1024 * 1024; // 25MB
+        private static readonly HashSet<string> AllowedModel3DExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".glb",
+            ".gltf"
+        };
+
         private readonly ApplicationDbContext _context;
         private readonly ICloudinaryService _cloudinaryService;
 
@@ -49,6 +57,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                         .OrderBy(img => img.SortOrder)
                         .Select(img => img.ImageUrl)
                         .FirstOrDefault(),
+                    Model3DUrl = p.Model3DUrl,
                     CategoryName = p.Category != null ? p.Category.Name : string.Empty
                 })
                 .ToListAsync();
@@ -87,6 +96,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                         .OrderBy(img => img.SortOrder)
                         .Select(img => img.ImageUrl)
                         .FirstOrDefault(),
+                    Model3DUrl = p.Model3DUrl,
                     CategoryName = p.Category != null ? p.Category.Name : string.Empty
                 })
                 .ToListAsync();
@@ -148,7 +158,6 @@ namespace EXE02_Backend_RE_CAFE.Services
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            // Load properties for returning DTO
             var createdProduct = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.ProductImages)
@@ -278,6 +287,36 @@ namespace EXE02_Backend_RE_CAFE.Services
             return MapToDetailDto(updatedProduct!);
         }
 
+        public async Task<ProductDetailDto?> UploadProductModel3DAsync(Guid id, UploadProductModel3DRequest request)
+        {
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null)
+            {
+                throw new NotFoundException($"Product with ID {id} not found.");
+            }
+
+            if (!product.IsPersonalizable)
+            {
+                throw new BadRequestException("This product is not personalizable. Enable IsPersonalizable before uploading a 3D model.");
+            }
+
+            ValidateModel3DFile(request.File);
+
+            var (url, publicId) = await _cloudinaryService.UploadRawFileAsync(request.File, "recafe/products-3d");
+            product.Model3DUrl = url;
+            product.Model3DPublicId = publicId;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            _context.Products.Update(product);
+            await _context.SaveChangesAsync();
+
+            return MapToDetailDto(product);
+        }
+
         private ProductDetailDto MapToDetailDto(Product product)
         {
             return new ProductDetailDto
@@ -294,6 +333,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Material = product.Material,
                 Size = product.Size,
                 UsageNote = product.UsageNote,
+                Model3DUrl = product.Model3DUrl,
                 IsPersonalizable = product.IsPersonalizable,
                 RewardPoints = product.RewardPoints,
                 Category = product.Category != null ? new CategoryDto
@@ -357,6 +397,25 @@ namespace EXE02_Backend_RE_CAFE.Services
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private static void ValidateModel3DFile(Microsoft.AspNetCore.Http.IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new BadRequestException("3D model file is required.");
+            }
+
+            if (file.Length > MaxModel3DFileSizeBytes)
+            {
+                throw new BadRequestException($"3D model file is too large. Maximum allowed size is {MaxModel3DFileSizeBytes / (1024 * 1024)}MB.");
+            }
+
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(extension) || !AllowedModel3DExtensions.Contains(extension))
+            {
+                throw new BadRequestException("Invalid 3D model format. Only .glb and .gltf files are supported.");
+            }
         }
 
         private async Task<List<string>> UploadImagesAsync(IReadOnlyCollection<Microsoft.AspNetCore.Http.IFormFile>? imageFiles, string folder)

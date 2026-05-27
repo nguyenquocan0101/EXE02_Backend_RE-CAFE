@@ -13,6 +13,7 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
         Task<ProductDetailDto?> CreateProductAsync(CreateProductRequest request);
         Task<ProductDetailDto?> UpdateProductAsync(Guid id, UpdateProductRequest request);
         Task<ProductDetailDto?> UploadProductImagesAsync(Guid id, UploadProductImagesRequest request);
+        Task<ProductDetailDto?> UploadProductModel3DAsync(Guid id, UploadProductModel3DRequest request);
         Task<ProductDetailDto?> GetProductBySlugAsync(string slug);
         Task<bool> SoftDeleteProductAsync(Guid id);
     }

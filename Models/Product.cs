@@ -43,6 +43,12 @@ namespace EXE02_Backend_RE_CAFE.Models
         [StringLength(500)]
         public string? UsageNote { get; set; }
 
+        [StringLength(500)]
+        public string? Model3DUrl { get; set; }
+
+        [StringLength(255)]
+        public string? Model3DPublicId { get; set; }
+
         public bool IsPersonalizable { get; set; } = false;
 
         public bool IsActive { get; set; } = true;

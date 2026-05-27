@@ -94,6 +94,8 @@ namespace EXE02_Backend_RE_CAFE.Data
                 entity.Property(e => e.Material).HasMaxLength(200);
                 entity.Property(e => e.Size).HasMaxLength(100);
                 entity.Property(e => e.UsageNote).HasMaxLength(500);
+                entity.Property(e => e.Model3DUrl).HasMaxLength(500);
+                entity.Property(e => e.Model3DPublicId).HasMaxLength(255);
 
                 entity.HasOne(e => e.Category)
                     .WithMany(c => c.Products)
