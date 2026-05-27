@@ -118,6 +118,22 @@ namespace EXE02_Backend_RE_CAFE.Services
             return MapToDetailDto(product);
         }
 
+        public async Task<ProductDetailDto?> GetProductByIdForAdminAsync(Guid id)
+        {
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Include(p => p.ProductVariants)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                return null;
+            }
+
+            return MapToDetailDto(product);
+        }
+
         public async Task<ProductDetailDto?> CreateProductAsync(CreateProductRequest request)
         {
             var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId);

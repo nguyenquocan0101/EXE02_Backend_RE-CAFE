@@ -31,6 +31,25 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status200OK));
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(Guid id)
+        {
+            var product = await _productService.GetProductByIdForAdminAsync(id);
+            if (product == null)
+            {
+                return NotFound(ErrorResponse<object>(
+                    message: $"Product with ID {id} not found.",
+                    action: "GetAdminProductById",
+                    statusCode: StatusCodes.Status404NotFound));
+            }
+
+            return Ok(SuccessResponse(
+                message: "Admin product retrieved successfully.",
+                action: "GetAdminProductById",
+                data: product,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpPost]
         [Consumes("application/json")]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request)
