@@ -19,7 +19,8 @@ namespace EXE02_Backend_RE_CAFE.Services
         private static readonly HashSet<string> AllowedModel3DExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".glb",
-            ".gltf"
+            ".gltf",
+            ".stl"
         };
 
         private readonly ApplicationDbContext _context;
@@ -430,7 +431,7 @@ namespace EXE02_Backend_RE_CAFE.Services
             var extension = Path.GetExtension(file.FileName);
             if (string.IsNullOrWhiteSpace(extension) || !AllowedModel3DExtensions.Contains(extension))
             {
-                throw new BadRequestException("Invalid 3D model format. Only .glb and .gltf files are supported.");
+                throw new BadRequestException("Invalid 3D model format. Only .glb, .gltf, and .stl files are supported.");
             }
         }
 
