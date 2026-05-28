@@ -20,7 +20,9 @@ namespace EXE02_Backend_RE_CAFE.Services
         {
             ".glb",
             ".gltf",
-            ".stl"
+            ".stl",
+            ".obj",
+            ".3mf"
         };
 
         private readonly ApplicationDbContext _context;
