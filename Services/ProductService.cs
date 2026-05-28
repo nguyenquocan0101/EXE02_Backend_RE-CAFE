@@ -14,6 +14,7 @@ namespace EXE02_Backend_RE_CAFE.Services
 {
     public class ProductService : IProductService
     {
+        private const int FeaturedProductsLimit = 8;
         private const int MaxProductImages = 5;
         private const long MaxModel3DFileSizeBytes = 25 * 1024 * 1024; // 25MB
         private static readonly HashSet<string> AllowedModel3DExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -64,6 +65,76 @@ namespace EXE02_Backend_RE_CAFE.Services
                     CategoryName = p.Category != null ? p.Category.Name : string.Empty
                 })
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductListDto>> GetFeaturedProductsAsync()
+        {
+            var ranking = await _context.OrderItems
+                .Where(oi => oi.Order != null
+                    && oi.Order.Status == OrderStatus.Completed
+                    && oi.Product != null
+                    && oi.Product.IsActive)
+                .GroupBy(oi => new
+                {
+                    oi.ProductId,
+                    ProductCreatedAt = oi.Product!.CreatedAt
+                })
+                .Select(g => new
+                {
+                    g.Key.ProductId,
+                    g.Key.ProductCreatedAt,
+                    SoldQuantity = g.Sum(x => x.Quantity),
+                    Revenue = g.Sum(x => x.TotalPrice)
+                })
+                .OrderByDescending(x => x.SoldQuantity)
+                .ThenByDescending(x => x.Revenue)
+                .ThenByDescending(x => x.ProductCreatedAt)
+                .Take(FeaturedProductsLimit)
+                .ToListAsync();
+
+            if (!ranking.Any())
+            {
+                return Enumerable.Empty<ProductListDto>();
+            }
+
+            var rankedProductIds = ranking.Select(x => x.ProductId).ToList();
+
+            var products = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.ProductImages)
+                .Where(p => p.IsActive && rankedProductIds.Contains(p.Id))
+                .Select(p => new ProductListDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Slug = p.Slug,
+                    SKU = p.SKU,
+                    IsActive = p.IsActive,
+                    Price = p.Price,
+                    SalePrice = p.SalePrice,
+                    ShortDescription = p.ShortDescription,
+                    Size = p.Size,
+                    Material = p.Material,
+                    ThumbnailUrl = p.ProductImages
+                        .Where(img => img.IsThumbnail)
+                        .OrderBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault() ?? p.ProductImages
+                        .OrderBy(img => img.SortOrder)
+                        .Select(img => img.ImageUrl)
+                        .FirstOrDefault(),
+                    Model3DUrl = p.Model3DUrl,
+                    CategoryName = p.Category != null ? p.Category.Name : string.Empty
+                })
+                .ToListAsync();
+
+            var rankingOrder = rankedProductIds
+                .Select((productId, index) => new { productId, index })
+                .ToDictionary(x => x.productId, x => x.index);
+
+            return products
+                .OrderBy(p => rankingOrder[p.Id])
+                .ToList();
         }
 
         public async Task<IEnumerable<ProductListDto>> GetProductsForAdminAsync(bool? isActive = null)

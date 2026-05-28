@@ -28,6 +28,17 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status200OK));
         }
 
+        [HttpGet("featured")]
+        public async Task<IActionResult> GetFeaturedProducts()
+        {
+            var products = await _productService.GetFeaturedProductsAsync();
+            return Ok(SuccessResponse(
+                message: "Featured products retrieved successfully.",
+                action: "GetFeaturedProducts",
+                data: products,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
