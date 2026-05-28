@@ -67,4 +67,13 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
     }
+
+    public class ProductCustomizationBootstrapDto
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductSlug { get; set; } = string.Empty;
+        public string BaseModel3DUrl { get; set; } = string.Empty;
+        public List<ProductCustomizationDto> Customizations { get; set; } = new();
+    }
 }

@@ -47,6 +47,19 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status201Created));
         }
 
+        [HttpGet("bootstrap")]
+        public async Task<IActionResult> GetCustomizationBootstrap(Guid productId)
+        {
+            var userId = GetUserId();
+            var bootstrap = await _customizationService.GetCustomizationBootstrapAsync(userId, productId);
+
+            return Ok(SuccessResponse(
+                message: "Product customization bootstrap retrieved successfully.",
+                action: "GetProductCustomizationBootstrap",
+                data: bootstrap,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetMyCustomizationsByProduct(Guid productId)
         {

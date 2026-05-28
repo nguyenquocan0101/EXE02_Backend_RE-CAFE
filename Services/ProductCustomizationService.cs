@@ -72,6 +72,37 @@ namespace EXE02_Backend_RE_CAFE.Services
             return MapToDto(customization);
         }
 
+        public async Task<ProductCustomizationBootstrapDto> GetCustomizationBootstrapAsync(Guid userId, Guid productId)
+        {
+            var product = await _context.Products
+                .FirstOrDefaultAsync(p => p.Id == productId && p.IsActive);
+
+            if (product == null)
+            {
+                throw new NotFoundException($"Product with ID {productId} not found.");
+            }
+
+            if (string.IsNullOrWhiteSpace(product.Model3DUrl))
+            {
+                throw new BadRequestException("This product does not have a 3D model yet.");
+            }
+
+            var customizations = await _context.ProductCustomizations
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId && c.ProductId == productId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            return new ProductCustomizationBootstrapDto
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                ProductSlug = product.Slug,
+                BaseModel3DUrl = product.Model3DUrl!,
+                Customizations = customizations.Select(MapToDto).ToList()
+            };
+        }
+
         public async Task<IEnumerable<ProductCustomizationDto>> GetMyCustomizationsByProductAsync(Guid userId, Guid productId)
         {
             var customizations = await _context.ProductCustomizations
