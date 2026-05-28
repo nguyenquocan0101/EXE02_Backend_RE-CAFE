@@ -19,17 +19,46 @@ namespace EXE02_Backend_RE_CAFE.Services
         public CloudinaryService(IOptions<CloudinarySettings> cloudinaryOptions)
         {
             var settings = cloudinaryOptions.Value;
-            _isConfigured = !string.IsNullOrWhiteSpace(settings.CloudName) &&
-                            !string.IsNullOrWhiteSpace(settings.ApiKey) &&
-                            !string.IsNullOrWhiteSpace(settings.ApiSecret);
+            var cloudName = FirstNonEmpty(
+                settings.CloudName,
+                Environment.GetEnvironmentVariable("Cloudinary__CloudName"),
+                Environment.GetEnvironmentVariable("Cloudinary:CloudName"),
+                Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"));
+            var apiKey = FirstNonEmpty(
+                settings.ApiKey,
+                Environment.GetEnvironmentVariable("Cloudinary__ApiKey"),
+                Environment.GetEnvironmentVariable("Cloudinary:ApiKey"),
+                Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"));
+            var apiSecret = FirstNonEmpty(
+                settings.ApiSecret,
+                Environment.GetEnvironmentVariable("Cloudinary__ApiSecret"),
+                Environment.GetEnvironmentVariable("Cloudinary:ApiSecret"),
+                Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
+
+            _isConfigured = !string.IsNullOrWhiteSpace(cloudName) &&
+                            !string.IsNullOrWhiteSpace(apiKey) &&
+                            !string.IsNullOrWhiteSpace(apiSecret);
 
             if (_isConfigured)
             {
-                _cloudinary = new Cloudinary(new Account(settings.CloudName, settings.ApiKey, settings.ApiSecret))
+                _cloudinary = new Cloudinary(new Account(cloudName, apiKey, apiSecret))
                 {
                     Api = { Secure = true }
                 };
             }
+        }
+
+        private static string? FirstNonEmpty(params string?[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return null;
         }
 
         public async Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder)
