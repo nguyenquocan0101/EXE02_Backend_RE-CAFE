@@ -47,6 +47,7 @@ namespace EXE02_Backend_RE_CAFE.Models
         public Cart? Cart { get; set; }
         public ICollection<Order> Orders { get; set; } = new List<Order>();
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<ProductCustomization> ProductCustomizations { get; set; } = new List<ProductCustomization>();
         public ICollection<LoyaltyPointTransaction> LoyaltyPointTransactions { get; set; } = new List<LoyaltyPointTransaction>();
         public ICollection<RewardRedemption> RewardRedemptions { get; set; } = new List<RewardRedemption>();
     }

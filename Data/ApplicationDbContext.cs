@@ -34,6 +34,7 @@ namespace EXE02_Backend_RE_CAFE.Data
         public DbSet<Reward> Rewards { get; set; }
         public DbSet<RewardRedemption> RewardRedemptions { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<ProductCustomization> ProductCustomizations { get; set; }
         public DbSet<B2BRequest> B2BRequests { get; set; }
         public DbSet<BlogPost> BlogPosts { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -430,6 +431,43 @@ namespace EXE02_Backend_RE_CAFE.Data
                     .WithMany()
                     .HasForeignKey(e => e.OrderId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ProductCustomization Configuration
+            modelBuilder.Entity<ProductCustomization>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SourceImageUrl).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.SourceImagePublicId).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.PreviewImageUrl).HasMaxLength(500);
+                entity.Property(e => e.ResultModelUrl).HasMaxLength(500);
+                entity.Property(e => e.ResultModelPublicId).HasMaxLength(255);
+                entity.Property(e => e.Note).HasMaxLength(1000);
+                entity.Property(e => e.FailureReason).HasMaxLength(1000);
+
+                entity.Property(e => e.PositionX).HasPrecision(8, 3);
+                entity.Property(e => e.PositionY).HasPrecision(8, 3);
+                entity.Property(e => e.PositionZ).HasPrecision(8, 3);
+                entity.Property(e => e.RotationX).HasPrecision(8, 3);
+                entity.Property(e => e.RotationY).HasPrecision(8, 3);
+                entity.Property(e => e.RotationZ).HasPrecision(8, 3);
+                entity.Property(e => e.Scale).HasPrecision(8, 3);
+                entity.Property(e => e.EngraveDepth).HasPrecision(8, 3);
+
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.ProductCustomizations)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Product)
+                    .WithMany(p => p.ProductCustomizations)
+                    .HasForeignKey(e => e.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ProductId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.CreatedAt);
             });
 
             // B2BRequest Configuration
