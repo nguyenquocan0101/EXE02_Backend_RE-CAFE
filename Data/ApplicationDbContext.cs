@@ -24,6 +24,7 @@ namespace EXE02_Backend_RE_CAFE.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<Coupon> Coupons { get; set; }
+        public DbSet<CouponProduct> CouponProducts { get; set; }
         public DbSet<CoffeePartner> CoffeePartners { get; set; }
         public DbSet<CoffeeGroundBatch> CoffeeGroundBatches { get; set; }
         public DbSet<ProductionBatch> ProductionBatches { get; set; }
@@ -264,7 +265,23 @@ namespace EXE02_Backend_RE_CAFE.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Value).HasPrecision(18, 2);
+                entity.Property(e => e.MaxDiscountAmount).HasPrecision(18, 2);
                 entity.Property(e => e.MinimumOrderAmount).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<CouponProduct>(entity =>
+            {
+                entity.HasKey(e => new { e.CouponId, e.ProductId });
+
+                entity.HasOne(e => e.Coupon)
+                    .WithMany(c => c.CouponProducts)
+                    .HasForeignKey(e => e.CouponId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                    .WithMany(p => p.CouponProducts)
+                    .HasForeignKey(e => e.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
 

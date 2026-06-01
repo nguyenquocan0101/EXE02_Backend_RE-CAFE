@@ -13,6 +13,7 @@ namespace EXE02_Backend_RE_CAFE.Extensions
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<ICartService, CartService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<ICouponService, CouponService>();
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();

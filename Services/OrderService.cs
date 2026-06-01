@@ -16,12 +16,18 @@ namespace EXE02_Backend_RE_CAFE.Services
         private readonly ApplicationDbContext _context;
         private readonly IPaymentService _paymentService;
         private readonly IAddressService _addressService;
+        private readonly ICouponService _couponService;
 
-        public OrderService(ApplicationDbContext context, IPaymentService paymentService, IAddressService addressService)
+        public OrderService(
+            ApplicationDbContext context,
+            IPaymentService paymentService,
+            IAddressService addressService,
+            ICouponService couponService)
         {
             _context = context;
             _paymentService = paymentService;
             _addressService = addressService;
+            _couponService = couponService;
         }
 
         public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -116,54 +122,18 @@ namespace EXE02_Backend_RE_CAFE.Services
 
             // Flat shipping fee of 30,000 VND, free shipping for orders over 200,000 VND
             decimal shippingFee = subtotal >= 200000 ? 0 : 30000;
-            decimal discountAmount = 0;
-            Coupon? coupon = null;
-
-            // 4. Apply coupon if provided
-            if (!string.IsNullOrWhiteSpace(request.CouponCode))
-            {
-                coupon = await _context.Coupons
-                    .FirstOrDefaultAsync(c => c.Code.ToLower() == request.CouponCode.Trim().ToLower() && c.IsActive);
-
-                if (coupon == null)
+            var couponCalculation = await _couponService.CalculateCouponAsync(
+                request.CouponCode,
+                orderItemsList.Select(oi => new CouponLineItemInput
                 {
-                    throw new BadRequestException("The coupon code provided is invalid or inactive.");
-                }
+                    ProductId = oi.ProductId,
+                    LineTotal = oi.TotalPrice
+                }).ToList(),
+                subtotal,
+                shippingFee,
+                true);
 
-                if (DateTime.UtcNow < coupon.StartDate || DateTime.UtcNow > coupon.EndDate)
-                {
-                    throw new BadRequestException("This coupon has either expired or is not yet active.");
-                }
-
-                if (coupon.UsageLimit > 0 && coupon.UsedCount >= coupon.UsageLimit)
-                {
-                    throw new BadRequestException("This coupon has reached its maximum usage limit.");
-                }
-
-                if (coupon.MinimumOrderAmount.HasValue && subtotal < coupon.MinimumOrderAmount.Value)
-                {
-                    throw new BadRequestException($"Your order subtotal must be at least {coupon.MinimumOrderAmount.Value:N0} VND to use this coupon.");
-                }
-
-                // Calculate discount
-                if (coupon.Type == CouponType.Percentage)
-                {
-                    discountAmount = subtotal * (coupon.Value / 100m);
-                }
-                else if (coupon.Type == CouponType.FixedAmount)
-                {
-                    discountAmount = coupon.Value;
-                }
-                else if (coupon.Type == CouponType.FreeShipping)
-                {
-                    discountAmount = shippingFee;
-                }
-
-                // Bound discount amount to not exceed the subtotal + shipping fee
-                discountAmount = Math.Min(discountAmount, subtotal + shippingFee);
-                coupon.UsedCount++;
-                _context.Coupons.Update(coupon);
-            }
+            decimal discountAmount = couponCalculation.DiscountAmount;
 
             decimal totalAmount = Math.Max(0, subtotal + shippingFee - discountAmount);
 
@@ -182,7 +152,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 PaymentStatus = PaymentStatus.Unpaid,
                 Note = request.Note,
                 CreatedAt = DateTime.UtcNow,
-                CouponId = coupon?.Id,
+                CouponId = couponCalculation.CouponId,
                 Payment = new Payment
                 {
                     Method = request.PaymentMethod,

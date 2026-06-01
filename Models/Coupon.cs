@@ -18,6 +18,11 @@ namespace EXE02_Backend_RE_CAFE.Models
         [Required]
         public decimal Value { get; set; }
 
+        [Required]
+        public CouponScope Scope { get; set; } = CouponScope.Order;
+
+        public decimal? MaxDiscountAmount { get; set; }
+
         public decimal? MinimumOrderAmount { get; set; }
 
         public int UsageLimit { get; set; }
@@ -34,5 +39,6 @@ namespace EXE02_Backend_RE_CAFE.Models
 
         // Navigation property
         public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public ICollection<CouponProduct> CouponProducts { get; set; } = new List<CouponProduct>();
     }
 }
