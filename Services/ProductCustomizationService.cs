@@ -49,9 +49,9 @@ namespace EXE02_Backend_RE_CAFE.Services
                 SourceImageUrl = sourceImageUrl,
                 SourceImagePublicId = sourceImagePublicId,
                 PreviewImageUrl = sourceImageUrl,
-                ResultModelUrl = product.Model3DUrl,
-                Status = ProductCustomizationStatus.Completed,
-                IsMockResult = true,
+                ResultModelUrl = null,
+                Status = ProductCustomizationStatus.Queued,
+                IsMockResult = false,
                 PositionX = request.PositionX,
                 PositionY = request.PositionY,
                 PositionZ = request.PositionZ,
@@ -61,7 +61,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Scale = request.Scale,
                 EngraveDepth = request.EngraveDepth,
                 Note = request.Note,
-                CompletedAt = DateTime.UtcNow,
+                CompletedAt = null,
                 UpdatedAt = DateTime.UtcNow
             };
 

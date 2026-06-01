@@ -50,6 +50,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.Configure<ProductCustomizationRenderSettings>(builder.Configuration.GetSection("ProductCustomizationRender"));
+builder.Services.AddHttpClient();
 
 // Configure DbContext with PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -85,6 +87,7 @@ builder.Services.AddProblemDetails();
 
 // Register Custom Services
 builder.Services.AddApplicationServices();
+builder.Services.AddHostedService<ProductCustomizationRenderWorker>();
 
 var app = builder.Build();
 
