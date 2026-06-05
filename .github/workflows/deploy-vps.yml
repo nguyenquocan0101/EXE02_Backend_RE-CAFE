@@ -20,15 +20,16 @@ jobs:
       - name: Validate deploy secrets
         shell: bash
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
-          VPS_USERNAME: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '180.93.114.25' }}
+          VPS_USERNAME: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME || 'root' }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_PASSWORD: ${{ secrets.VPS_SSH_PASSWORD || secrets.VPS_PASSWORD }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || vars.POSTGRES_PASSWORD }}
         run: |
           set -euo pipefail
           [ -n "$VPS_HOST" ] || { echo "::error::Missing VPS_HOST (set either Repository Secret or Repository Variable)"; exit 1; }
           [ -n "$VPS_USERNAME" ] || { echo "::error::Missing VPS_USERNAME (set either Repository Secret or Repository Variable)"; exit 1; }
-          [ -n "$VPS_SSH_KEY" ] || { echo "::error::Missing repository secret VPS_SSH_KEY"; exit 1; }
+          [ -n "$VPS_SSH_KEY" ] || [ -n "$VPS_SSH_PASSWORD" ] || { echo "::error::Missing repository secret VPS_SSH_KEY or VPS_SSH_PASSWORD"; exit 1; }
           [ -n "$POSTGRES_PASSWORD" ] || { echo "::error::Missing POSTGRES_PASSWORD (Repository Secret/Variable)."; exit 1; }
 
       - name: Deploy over SSH
@@ -56,9 +57,10 @@ jobs:
           INPUT_CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY || vars.CLOUDINARY_API_KEY }}
           INPUT_CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET || vars.CLOUDINARY_API_SECRET }}
         with:
-          host: ${{ secrets.VPS_HOST || vars.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME }}
+          host: ${{ secrets.VPS_HOST || vars.VPS_HOST || '180.93.114.25' }}
+          username: ${{ secrets.VPS_USERNAME || vars.VPS_USERNAME || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_SSH_PASSWORD || secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_PORT || vars.VPS_PORT || '22' }}
           command_timeout: 20m
           envs: INPUT_DEPLOY_PATH,INPUT_DEPLOY_REPO_URL,INPUT_API_PORT,INPUT_ASPNETCORE_ENVIRONMENT,INPUT_ENABLE_SWAGGER,INPUT_POSTGRES_DB,INPUT_POSTGRES_USER,INPUT_POSTGRES_PASSWORD,INPUT_POSTGRES_PORT,INPUT_APPLY_MIGRATIONS_ON_STARTUP,INPUT_MIGRATION_RETRY_COUNT,INPUT_MIGRATION_RETRY_DELAY_SECONDS,INPUT_FAIL_STARTUP_ON_MIGRATION_ERROR,INPUT_JWT_KEY,INPUT_JWT_ISSUER,INPUT_JWT_AUDIENCE,INPUT_JWT_DURATION_MINUTES,INPUT_CORS_ALLOWED_ORIGINS,INPUT_CLOUDINARY_CLOUD_NAME,INPUT_CLOUDINARY_API_KEY,INPUT_CLOUDINARY_API_SECRET
@@ -67,6 +69,25 @@ jobs:
 
             DEPLOY_PATH="${INPUT_DEPLOY_PATH:-/opt/EXE02_Backend_RE-CAFE}"
             REPO_URL="${INPUT_DEPLOY_REPO_URL:-https://github.com/${{ github.repository }}.git}"
+
+            SUDO=""
+            if [ "$(id -u)" -ne 0 ]; then
+              SUDO="sudo"
+            fi
+
+            if ! command -v git >/dev/null 2>&1; then
+              $SUDO apt-get update
+              $SUDO apt-get install -y git ca-certificates curl
+            fi
+
+            if ! command -v docker >/dev/null 2>&1; then
+              curl -fsSL https://get.docker.com | $SUDO sh
+            fi
+
+            if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+              $SUDO apt-get update
+              $SUDO apt-get install -y docker-compose-plugin
+            fi
 
             if [ ! -d "$DEPLOY_PATH/.git" ]; then
               if ! mkdir -p "$DEPLOY_PATH" 2>/dev/null; then
