@@ -24,9 +24,9 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE:-ReCafeUsers}
       Jwt__DurationInMinutes: ${JWT_DURATION_MINUTES:-60}
       Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS:-https://recafe.site,https://www.recafe.site}
-      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME:-}
-      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY:-}
-      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET:-}
+      Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME:-dloqwnbxo}
+      Cloudinary__ApiKey: ${CLOUDINARY_API_KEY:-242728938481315}
+      Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET:-SWT_1BG_4xNRkF6CZyEQ0rg6ET4}
     ports:
       - "${API_PORT:-5080}:8080"
     restart: on-failure:5
