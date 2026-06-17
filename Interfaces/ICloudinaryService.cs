@@ -6,6 +6,7 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
     public interface ICloudinaryService
     {
         Task<(string Url, string PublicId)> UploadImageAsync(IFormFile file, string folder);
+        Task<(string Url, string PublicId)> UploadVideoAsync(IFormFile file, string folder);
         Task<(string Url, string PublicId)> UploadRawFileAsync(IFormFile file, string folder);
         Task<(string Url, string PublicId)> UploadRawFileAsync(string filePath, string folder, string? fileName = null);
     }

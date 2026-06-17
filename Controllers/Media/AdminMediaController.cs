@@ -23,8 +23,36 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadImage([FromForm] UploadImageRequest request)
         {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return BadRequest(ErrorResponse<object>(
+                    message: "File is required.",
+                    action: "UploadImage",
+                    statusCode: StatusCodes.Status400BadRequest));
+            }
+
             var folder = string.IsNullOrWhiteSpace(request.Folder) ? "recafe/products" : request.Folder.Trim();
-            var (url, publicId) = await _cloudinaryService.UploadImageAsync(request.File, folder);
+            
+            string url;
+            string publicId;
+            bool isVideo = request.File.ContentType.StartsWith("video/", System.StringComparison.OrdinalIgnoreCase);
+            bool isImage = request.File.ContentType.StartsWith("image/", System.StringComparison.OrdinalIgnoreCase);
+
+            if (isImage)
+            {
+                (url, publicId) = await _cloudinaryService.UploadImageAsync(request.File, folder);
+            }
+            else if (isVideo)
+            {
+                (url, publicId) = await _cloudinaryService.UploadVideoAsync(request.File, folder);
+            }
+            else
+            {
+                return BadRequest(ErrorResponse<object>(
+                    message: "Only image or video files are allowed.",
+                    action: "UploadImage",
+                    statusCode: StatusCodes.Status400BadRequest));
+            }
 
             var data = new UploadImageResponse
             {
@@ -33,7 +61,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             };
 
             return Ok(SuccessResponse(
-                message: "Image uploaded successfully.",
+                message: isVideo ? "Video uploaded successfully." : "Image uploaded successfully.",
                 action: "UploadImage",
                 data: data,
                 statusCode: StatusCodes.Status200OK));
