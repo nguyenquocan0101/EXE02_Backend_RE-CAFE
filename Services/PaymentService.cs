@@ -40,7 +40,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 return (true, "Ignored non-incoming transaction");
             }
 
-            // Parse Transaction Date
+            // Parse Transaction Date (SePay timezone is Vietnam UTC+7, convert to UTC and specify Utc kind for PostgreSQL)
             DateTime paidAt = DateTime.UtcNow;
             if (!string.IsNullOrEmpty(request.TransactionDate))
             {
@@ -50,7 +50,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                     System.Globalization.DateTimeStyles.None, 
                     out var parsedDate))
                 {
-                    paidAt = parsedDate;
+                    paidAt = DateTime.SpecifyKind(parsedDate.AddHours(-7), DateTimeKind.Utc);
                 }
             }
 
