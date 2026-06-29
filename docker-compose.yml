@@ -31,6 +31,10 @@ services:
       Cloudinary__CloudName: ${CLOUDINARY_CLOUD_NAME:-dloqwnbxo}
       Cloudinary__ApiKey: ${CLOUDINARY_API_KEY:-242728938481315}
       Cloudinary__ApiSecret: ${CLOUDINARY_API_SECRET:-SWT_1BG_4xNRkF6CZyEQ0rg6ET4}
+      Sepay__BankAccount: ${SEPAY_BANK_ACCOUNT:-123456789}
+      Sepay__BankName: ${SEPAY_BANK_NAME:-MBBank}
+      Sepay__ApiKey: ${SEPAY_API_KEY:-sandbox_sepay_api_key_123456}
+      Sepay__QrPrefix: ${SEPAY_QR_PREFIX:-RECAFE}
     ports:
       - "${API_PORT:-5080}:8080"
     restart: on-failure:5
