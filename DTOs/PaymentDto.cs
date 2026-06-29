@@ -6,7 +6,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
     {
         public long Id { get; set; }
         public string? Gateway { get; set; }
-        public DateTime? TransactionDate { get; set; }
+        public string? TransactionDate { get; set; }
         public string? AccountNumber { get; set; }
         public string? SubAccount { get; set; }
         public string? TransferType { get; set; } // "in" or "out"

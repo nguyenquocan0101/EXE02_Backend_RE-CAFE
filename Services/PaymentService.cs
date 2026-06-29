@@ -40,6 +40,20 @@ namespace EXE02_Backend_RE_CAFE.Services
                 return (true, "Ignored non-incoming transaction");
             }
 
+            // Parse Transaction Date
+            DateTime paidAt = DateTime.UtcNow;
+            if (!string.IsNullOrEmpty(request.TransactionDate))
+            {
+                if (DateTime.TryParseExact(request.TransactionDate, 
+                    new[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.fffZ", "yyyy-MM-dd'T'HH:mm:ssZ" }, 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    System.Globalization.DateTimeStyles.None, 
+                    out var parsedDate))
+                {
+                    paidAt = parsedDate;
+                }
+            }
+
             // Parse Order Code from Code or Content using regex
             // Order Code format: ORD-YYYYMMDD-NNNN (e.g. ORD-20260525-1234)
             var regex = new Regex(@"(ORD)-?(\d{8})-?(\d{4})", RegexOptions.IgnoreCase);
@@ -84,7 +98,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 order.Payment.Status = PaymentStatus.Paid;
                 order.Payment.Amount = request.TransferAmount;
                 order.Payment.TransactionCode = request.ReferenceCode ?? request.Id.ToString();
-                order.Payment.PaidAt = request.TransactionDate ?? DateTime.UtcNow;
+                order.Payment.PaidAt = paidAt;
                 _context.Payments.Update(order.Payment);
             }
             else
@@ -96,7 +110,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                     Status = PaymentStatus.Paid,
                     Amount = request.TransferAmount,
                     TransactionCode = request.ReferenceCode ?? request.Id.ToString(),
-                    PaidAt = request.TransactionDate ?? DateTime.UtcNow
+                    PaidAt = paidAt
                 };
                 _context.Payments.Add(payment);
             }
