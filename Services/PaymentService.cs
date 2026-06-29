@@ -91,7 +91,6 @@ namespace EXE02_Backend_RE_CAFE.Services
             // Update order status and record payment
             order.PaymentStatus = PaymentStatus.Paid;
             order.Status = OrderStatus.Confirmed;
-            _context.Orders.Update(order);
 
             if (order.Payment != null)
             {
@@ -99,7 +98,6 @@ namespace EXE02_Backend_RE_CAFE.Services
                 order.Payment.Amount = request.TransferAmount;
                 order.Payment.TransactionCode = request.ReferenceCode ?? request.Id.ToString();
                 order.Payment.PaidAt = paidAt;
-                _context.Payments.Update(order.Payment);
             }
             else
             {
