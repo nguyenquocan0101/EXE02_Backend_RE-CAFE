@@ -103,8 +103,8 @@ jobs:
 
             cd "$DEPLOY_PATH"
             git fetch origin main
-            git checkout main
-            git pull --ff-only origin main
+            git checkout -f main
+            git reset --hard origin/main
 
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
