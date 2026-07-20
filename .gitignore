@@ -87,3 +87,7 @@ sanpham
 DEPLOYMENT.md
 UPLOAD_AI_DESIGN_PREVIEW_3D_PLAN.md
 FE_3D_CUSTOMIZATION_MVP.md
+.agent/
+.agents/
+.codegraph/
+.codex/
