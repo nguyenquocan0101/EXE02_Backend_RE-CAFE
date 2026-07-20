@@ -231,7 +231,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
-            return orders.Select(MapToDto);
+            var reviewLookup = await GetReviewLookupAsync(userId, orders.Select(order => order.Id));
+            return orders.Select(order => MapToDto(order, reviewLookup));
         }
 
         public async Task<OrderDto?> GetOrderByIdAsync(Guid userId, Guid orderId)
@@ -249,7 +250,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                 return null;
             }
 
-            return MapToDto(order);
+            var reviewLookup = await GetReviewLookupAsync(userId, new[] { orderId });
+            return MapToDto(order, reviewLookup);
         }
 
         public async Task<OrderDto> CancelOrderAsync(Guid userId, Guid orderId)
@@ -315,7 +317,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
-            return orders.Select(MapToDto);
+            return orders.Select(order => MapToDto(order));
         }
 
         public async Task<OrderDto?> GetOrderByIdAdminAsync(Guid orderId)
@@ -397,7 +399,26 @@ namespace EXE02_Backend_RE_CAFE.Services
             return MapToDto(updatedOrder!);
         }
 
-        private OrderDto MapToDto(Order order)
+        private async Task<Dictionary<(Guid OrderId, Guid ProductId), Guid>> GetReviewLookupAsync(Guid userId, IEnumerable<Guid> orderIds)
+        {
+            var ids = orderIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new Dictionary<(Guid OrderId, Guid ProductId), Guid>();
+            }
+
+            var reviews = await _context.Reviews
+                .Where(review => review.UserId == userId && ids.Contains(review.OrderId))
+                .Select(review => new { review.OrderId, review.ProductId, review.Id, review.CreatedAt })
+                .OrderByDescending(review => review.CreatedAt)
+                .ToListAsync();
+
+            return reviews
+                .GroupBy(review => (review.OrderId, review.ProductId))
+                .ToDictionary(group => group.Key, group => group.First().Id);
+        }
+
+        private OrderDto MapToDto(Order order, IReadOnlyDictionary<(Guid OrderId, Guid ProductId), Guid>? reviewLookup = null)
         {
             var dto = new OrderDto
             {
@@ -425,17 +446,25 @@ namespace EXE02_Backend_RE_CAFE.Services
                     Ward = order.ShippingAddress.Ward,
                     DetailAddress = order.ShippingAddress.DetailAddress
                 } : null,
-                OrderItems = order.OrderItems.Select(oi => new OrderItemDto
+                OrderItems = order.OrderItems.Select(oi =>
                 {
-                    Id = oi.Id,
-                    ProductId = oi.ProductId,
-                    ProductName = oi.ProductName,
-                    VariantId = oi.VariantId,
-                    VariantName = oi.Variant?.VariantName,
-                    UnitPrice = oi.UnitPrice,
-                    Quantity = oi.Quantity,
-                    TotalPrice = oi.TotalPrice,
-                    PersonalizationNote = oi.PersonalizationNote
+                    var reviewId = reviewLookup != null && reviewLookup.TryGetValue((order.Id, oi.ProductId), out var foundReviewId)
+                        ? foundReviewId
+                        : (Guid?)null;
+
+                    return new OrderItemDto
+                    {
+                        Id = oi.Id,
+                        ProductId = oi.ProductId,
+                        ProductName = oi.ProductName,
+                        VariantId = oi.VariantId,
+                        VariantName = oi.Variant?.VariantName,
+                        UnitPrice = oi.UnitPrice,
+                        Quantity = oi.Quantity,
+                        TotalPrice = oi.TotalPrice,
+                        PersonalizationNote = oi.PersonalizationNote,
+                        ReviewId = reviewId
+                    };
                 }).ToList()
             };
 

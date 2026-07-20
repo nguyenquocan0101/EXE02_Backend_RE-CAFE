@@ -37,6 +37,8 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public int Quantity { get; set; }
         public decimal TotalPrice { get; set; }
         public string? PersonalizationNote { get; set; }
+        public Guid? ReviewId { get; set; }
+        public bool HasReview => ReviewId.HasValue;
     }
 
     public class OrderAddressDto

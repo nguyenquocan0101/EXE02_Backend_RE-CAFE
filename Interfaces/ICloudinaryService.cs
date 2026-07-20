@@ -9,5 +9,6 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
         Task<(string Url, string PublicId)> UploadVideoAsync(IFormFile file, string folder);
         Task<(string Url, string PublicId)> UploadRawFileAsync(IFormFile file, string folder);
         Task<(string Url, string PublicId)> UploadRawFileAsync(string filePath, string folder, string? fileName = null);
+        Task<bool> DeleteAsync(string publicId, string mediaType);
     }
 }

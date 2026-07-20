@@ -35,6 +35,7 @@ namespace EXE02_Backend_RE_CAFE.Data
         public DbSet<Reward> Rewards { get; set; }
         public DbSet<RewardRedemption> RewardRedemptions { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<ReviewMedia> ReviewMedias { get; set; }
         public DbSet<ProductCustomization> ProductCustomizations { get; set; }
         public DbSet<B2BRequest> B2BRequests { get; set; }
         public DbSet<BlogPost> BlogPosts { get; set; }
@@ -434,6 +435,11 @@ namespace EXE02_Backend_RE_CAFE.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Comment).HasMaxLength(1000);
 
+                entity.HasIndex(e => new { e.UserId, e.OrderId, e.ProductId })
+                    .IsUnique();
+
+                entity.HasIndex(e => new { e.ProductId, e.IsVisible, e.CreatedAt });
+
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Reviews)
                     .HasForeignKey(e => e.UserId)
@@ -448,6 +454,20 @@ namespace EXE02_Backend_RE_CAFE.Data
                     .WithMany()
                     .HasForeignKey(e => e.OrderId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Review Media Configuration
+            modelBuilder.Entity<ReviewMedia>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Url).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.PublicId).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.MediaType).IsRequired().HasMaxLength(20);
+
+                entity.HasOne(e => e.Review)
+                    .WithMany(r => r.Media)
+                    .HasForeignKey(e => e.ReviewId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ProductCustomization Configuration

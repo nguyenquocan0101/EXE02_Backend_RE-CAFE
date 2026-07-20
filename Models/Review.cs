@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace EXE02_Backend_RE_CAFE.Models
@@ -25,6 +26,8 @@ namespace EXE02_Backend_RE_CAFE.Models
         public bool IsVisible { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<ReviewMedia> Media { get; set; } = new List<ReviewMedia>();
 
         // Navigation properties
         public User? User { get; set; }

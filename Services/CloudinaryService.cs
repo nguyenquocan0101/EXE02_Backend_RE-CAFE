@@ -222,5 +222,29 @@ namespace EXE02_Backend_RE_CAFE.Services
 
             return (result.SecureUrl.ToString(), result.PublicId);
         }
+
+        public async Task<bool> DeleteAsync(string publicId, string mediaType)
+        {
+            if (!_isConfigured || string.IsNullOrWhiteSpace(publicId))
+            {
+                return false;
+            }
+
+            var resourceType = mediaType.Equals("video", StringComparison.OrdinalIgnoreCase)
+                ? ResourceType.Video
+                : ResourceType.Image;
+
+            var deletionParams = new DeletionParams(publicId)
+            {
+                ResourceType = resourceType,
+                Type = "upload",
+                Invalidate = true
+            };
+
+            var result = await _cloudinary!.DestroyAsync(deletionParams);
+            return result.Error == null &&
+                   (string.Equals(result.Result, "ok", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(result.Result, "not found", StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
