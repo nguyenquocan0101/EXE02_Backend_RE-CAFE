@@ -239,7 +239,13 @@ namespace EXE02_Backend_RE_CAFE.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.TransactionCode).HasMaxLength(100);
+
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.PaidAt);
+                entity.HasIndex(e => e.TransactionCode);
+                entity.HasIndex(e => e.CreatedAt);
 
                 entity.HasOne(e => e.Order)
                     .WithOne(o => o.Payment)

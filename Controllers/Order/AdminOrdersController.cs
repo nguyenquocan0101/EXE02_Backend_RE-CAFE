@@ -10,7 +10,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
 {
     [ApiController]
     [Route("api/admin/orders")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public class AdminOrdersController : BaseApiController
     {
         private readonly IOrderService _orderService;
@@ -50,6 +50,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
         }
 
         [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateOrderStatusRequest request)
         {
             var order = await _orderService.UpdateOrderStatusAsync(id, request);

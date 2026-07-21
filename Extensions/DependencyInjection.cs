@@ -17,7 +17,9 @@ namespace EXE02_Backend_RE_CAFE.Extensions
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IUserManagementService, UserManagementService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddScoped<IPaymentManagementService, PaymentManagementService>();
             services.AddScoped<IProductCustomizationService, ProductCustomizationService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<IProductCustomizationRenderEngine, BlenderProductCustomizationRenderEngine>();

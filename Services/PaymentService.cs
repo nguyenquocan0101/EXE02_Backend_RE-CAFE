@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -66,56 +67,86 @@ namespace EXE02_Backend_RE_CAFE.Services
             }
 
             var orderCode = $"ORD-{match.Groups[2].Value}-{match.Groups[3].Value}";
+            var transactionCode = string.IsNullOrWhiteSpace(request.ReferenceCode)
+                ? request.Id.ToString()
+                : request.ReferenceCode.Trim();
+            var orderLockKey = $"order:{orderCode}";
+            var transactionLockKey = $"transaction:{transactionCode}";
 
-            // Query the Order from Database
-            var order = await _context.Orders
-                .Include(o => o.Payment)
-                .FirstOrDefaultAsync(o => o.OrderCode.ToLower() == orderCode.ToLower());
-
-            if (order == null)
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            try
             {
-                return (false, $"Order with code {orderCode} was not found");
-            }
+                // PostgreSQL transaction-scoped advisory locks serialize duplicate
+                // deliveries across API instances without surfacing serialization
+                // failures as HTTP 500 responses. The transaction-reference lock also
+                // prevents one bank transaction from settling two different orders.
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT pg_advisory_xact_lock(hashtextextended({orderLockKey}, 0));");
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT pg_advisory_xact_lock(hashtextextended({transactionLockKey}, 0));");
 
-            if (order.PaymentStatus == PaymentStatus.Paid)
-            {
-                return (true, $"Order {orderCode} has already been paid");
-            }
+                var order = await _context.Orders
+                    .Include(o => o.Payment)
+                    .FirstOrDefaultAsync(o => o.OrderCode.ToLower() == orderCode.ToLower());
 
-            // Validate the paid amount
-            if (request.TransferAmount < order.TotalAmount)
-            {
-                return (false, $"Received amount ({request.TransferAmount:N0} VND) is less than order total ({order.TotalAmount:N0} VND)");
-            }
-
-            // Update order status and record payment
-            order.PaymentStatus = PaymentStatus.Paid;
-            order.Status = OrderStatus.Confirmed;
-
-            if (order.Payment != null)
-            {
-                order.Payment.Status = PaymentStatus.Paid;
-                order.Payment.Amount = request.TransferAmount;
-                order.Payment.TransactionCode = request.ReferenceCode ?? request.Id.ToString();
-                order.Payment.PaidAt = paidAt;
-            }
-            else
-            {
-                var payment = new Payment
+                if (order == null)
                 {
-                    OrderId = order.Id,
-                    Method = PaymentMethod.BankTransfer,
-                    Status = PaymentStatus.Paid,
-                    Amount = request.TransferAmount,
-                    TransactionCode = request.ReferenceCode ?? request.Id.ToString(),
-                    PaidAt = paidAt
-                };
-                _context.Payments.Add(payment);
+                    return (false, $"Order with code {orderCode} was not found");
+                }
+
+                if (order.PaymentStatus == PaymentStatus.Paid)
+                {
+                    return (true, $"Order {orderCode} has already been paid");
+                }
+
+                // Validate the paid amount
+                if (request.TransferAmount < order.TotalAmount)
+                {
+                    return (false, $"Received amount ({request.TransferAmount:N0} VND) is less than order total ({order.TotalAmount:N0} VND)");
+                }
+
+                var transactionAlreadyUsed = await _context.Payments
+                    .AnyAsync(payment => payment.TransactionCode == transactionCode && payment.OrderId != order.Id);
+                if (transactionAlreadyUsed)
+                {
+                    return (false, "The payment transaction code has already been used");
+                }
+
+                // Update order status and record payment
+                order.PaymentStatus = PaymentStatus.Paid;
+                order.Status = OrderStatus.Confirmed;
+
+                if (order.Payment != null)
+                {
+                    order.Payment.Status = PaymentStatus.Paid;
+                    order.Payment.Amount = request.TransferAmount;
+                    order.Payment.TransactionCode = transactionCode;
+                    order.Payment.PaidAt = paidAt;
+                }
+                else
+                {
+                    var payment = new Payment
+                    {
+                        OrderId = order.Id,
+                        Method = PaymentMethod.BankTransfer,
+                        Status = PaymentStatus.Paid,
+                        Amount = request.TransferAmount,
+                        TransactionCode = transactionCode,
+                        PaidAt = paidAt
+                    };
+                    _context.Payments.Add(payment);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return (true, $"Successfully processed payment for order {orderCode}");
             }
-
-            await _context.SaveChangesAsync();
-
-            return (true, $"Successfully processed payment for order {orderCode}");
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

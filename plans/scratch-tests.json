@@ -1,0 +1,62 @@
+[
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/EXE02_Backend_RE-CAFE.Tests.csproj",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/Usings.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/Infrastructure/PaymentApiFactory.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/Infrastructure/PaymentTestFixture.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/PaymentApiContractTests.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/PaymentManagementIntegrationTests.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/PaymentMigrationAndPerformanceTests.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/CheckoutPaymentRegressionTests.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/SepayPaymentRegressionTests.cs",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  },
+  {
+    "path": "tests/EXE02_Backend_RE-CAFE.Tests/README.md",
+    "phase": "phase-05-verification-and-rollout",
+    "createdAt": "2026-07-21T14:00:00+07:00",
+    "status": "kept"
+  }
+]

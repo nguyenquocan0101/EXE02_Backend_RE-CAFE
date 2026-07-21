@@ -1,4 +1,6 @@
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +35,7 @@ namespace EXE02_Backend_RE_CAFE.Controllers
 
             var token = authHeader.Substring("Apikey ".Length).Trim();
             var expectedToken = _configuration["Sepay:ApiKey"];
-            if (expectedToken != token)
+            if (!IsValidApiKey(expectedToken, token))
             {
                 return Unauthorized(new { success = false, message = "Invalid API Key" });
             }
@@ -47,6 +49,18 @@ namespace EXE02_Backend_RE_CAFE.Controllers
             }
 
             return Ok(new { success = true, message });
+        }
+
+        private static bool IsValidApiKey(string? expectedToken, string providedToken)
+        {
+            if (string.IsNullOrWhiteSpace(expectedToken) || string.IsNullOrWhiteSpace(providedToken))
+            {
+                return false;
+            }
+
+            var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(expectedToken));
+            var providedHash = SHA256.HashData(Encoding.UTF8.GetBytes(providedToken));
+            return CryptographicOperations.FixedTimeEquals(expectedHash, providedHash);
         }
     }
 }

@@ -19,6 +19,8 @@ namespace EXE02_Backend_RE_CAFE.Models
         [Required]
         public decimal Amount { get; set; }
 
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         [StringLength(100)]
         public string? TransactionCode { get; set; }
 

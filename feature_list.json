@@ -1,0 +1,42 @@
+[
+  {
+    "id": "view-payment-transactions",
+    "title": "View a paginated list of customer payment transactions",
+    "user_visible_behavior": "so that I can monitor payment activity without opening each order",
+    "verification_command": "The page shows order code, customer, payment method, amount, payment status, transaction code, and paid time; pagination works with at least 100 records.",
+    "status": "passing",
+    "evidence": "Release build: 0 warnings/errors; integration tests cover pagination and 10,001-row p95 45.58 ms.",
+    "notes": "Covered by phases 01 and 03.",
+    "priority": "P1"
+  },
+  {
+    "id": "filter-payment-transactions",
+    "title": "Search and filter payment transactions",
+    "user_visible_behavior": "so that I can quickly find a payment by order, customer, transaction code, status, method, or date range",
+    "verification_command": "Each filter can be combined with the others, the result count is accurate, and an empty result has a clear empty state.",
+    "status": "passing",
+    "evidence": "Combined filter, summary and export integration tests pass; FE production build passes.",
+    "notes": "Covered by phases 01 and 03.",
+    "priority": "P1"
+  },
+  {
+    "id": "view-payment-detail",
+    "title": "Open payment transaction detail linked to its order",
+    "user_visible_behavior": "so that I can verify the payment context and amount",
+    "verification_command": "Detail shows payment ID, order ID/code, customer, order total, received amount, method, status, transaction code, paid time, and a related-order action.",
+    "status": "passing",
+    "evidence": "Role/detail API contract tests pass; FE payment detail and linked-order route build passes.",
+    "notes": "Covered by phases 01 and 03.",
+    "priority": "P1"
+  },
+  {
+    "id": "preserve-customer-payment-flow",
+    "title": "Preserve checkout and profile payment status behavior",
+    "user_visible_behavior": "so that adding admin transaction management does not interrupt checkout",
+    "verification_command": "Checkout, SePay webhook confirmation, polling, and profile order-history payment action continue to work for COD and bank-transfer orders.",
+    "status": "passing",
+    "evidence": "COD, bank-transfer QR, profile unpaid-order, webhook replay/concurrency and underpayment tests pass; manual polling smoke is deferred to post-push validation by user approval.",
+    "notes": "Covered by phases 02 and 05.",
+    "priority": "P1"
+  }
+]
