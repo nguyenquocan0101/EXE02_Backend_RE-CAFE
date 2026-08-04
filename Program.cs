@@ -9,6 +9,7 @@ using EXE02_Backend_RE_CAFE.Services;
 using EXE02_Backend_RE_CAFE.Middlewares;
 using EXE02_Backend_RE_CAFE.Extensions;
 using EXE02_Backend_RE_CAFE.Models;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
 builder.Services.Configure<ProductCustomizationRenderSettings>(builder.Configuration.GetSection("ProductCustomizationRender"));
+builder.Services.Configure<TraceabilitySettings>(builder.Configuration.GetSection("Traceability"));
 builder.Services.AddHttpClient();
 
 // Configure DbContext with PostgreSQL

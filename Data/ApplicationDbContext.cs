@@ -28,6 +28,7 @@ namespace EXE02_Backend_RE_CAFE.Data
         public DbSet<CoffeePartner> CoffeePartners { get; set; }
         public DbSet<CoffeeGroundBatch> CoffeeGroundBatches { get; set; }
         public DbSet<ProductionBatch> ProductionBatches { get; set; }
+        public DbSet<CoffeeType> CoffeeTypes { get; set; }
         public DbSet<ProductStory> ProductStories { get; set; }
         public DbSet<QRCode> QRCodes { get; set; }
         public DbSet<QRScanLog> QRScanLogs { get; set; }
@@ -335,20 +336,52 @@ namespace EXE02_Backend_RE_CAFE.Data
             modelBuilder.Entity<ProductStory>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.OriginStory).IsRequired().HasMaxLength(2000);
-                entity.Property(e => e.RecyclingProcess).IsRequired().HasMaxLength(2000);
-                entity.Property(e => e.SustainabilityMessage).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.Slug).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.ContentHtmlVi).IsRequired().HasMaxLength(50000);
+                entity.Property(e => e.ContentHtmlEn).IsRequired().HasMaxLength(50000);
+                entity.Property(e => e.OriginStory).HasMaxLength(2000);
+                entity.Property(e => e.RecyclingProcess).HasMaxLength(2000);
+                entity.Property(e => e.SustainabilityMessage).HasMaxLength(1000);
                 entity.Property(e => e.EstimatedWasteReducedGram).HasPrecision(18, 2);
 
                 entity.HasOne(e => e.Product)
-                    .WithOne(p => p.ProductStory)
-                    .HasForeignKey<ProductStory>(e => e.ProductId)
+                    .WithMany(p => p.ProductStories)
+                    .HasForeignKey(e => e.ProductId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.CoffeeType)
+                    .WithMany(c => c.ProductStories)
+                    .HasForeignKey(e => e.CoffeeTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.ProductionBatch)
                     .WithMany(b => b.ProductStories)
                     .HasForeignKey(e => e.ProductionBatchId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.Slug).IsUnique();
+                entity.HasIndex(e => new { e.ProductId, e.CoffeeTypeId }).IsUnique();
+            });
+
+            // CoffeeType Configuration
+            modelBuilder.Entity<CoffeeType>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Slug).IsRequired().HasMaxLength(80);
+                entity.HasIndex(e => e.Slug).IsUnique();
+                entity.HasIndex(e => new { e.IsActive, e.DisplayOrder });
+
+                entity.HasData(
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000001"), Name = "Arabica", Slug = "arabica", DisplayOrder = 1, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000002"), Name = "Robusta", Slug = "robusta", DisplayOrder = 2, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000003"), Name = "Liberica", Slug = "liberica", DisplayOrder = 3, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000004"), Name = "Excelsa", Slug = "excelsa", DisplayOrder = 4, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000005"), Name = "Culi", Slug = "culi", DisplayOrder = 5, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000006"), Name = "Moka", Slug = "moka", DisplayOrder = 6, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000007"), Name = "Catimor", Slug = "catimor", DisplayOrder = 7, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) },
+                    new CoffeeType { Id = new Guid("3f6b7b8a-4c0b-4d8b-8f6c-000000000008"), Name = "Blend", Slug = "blend", DisplayOrder = 8, CreatedAt = new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc) }
+                );
             });
 
             // QRCode Configuration
@@ -357,6 +390,7 @@ namespace EXE02_Backend_RE_CAFE.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.QRValue).IsRequired().HasMaxLength(250);
                 entity.Property(e => e.LandingPageUrl).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.IsShared).HasDefaultValue(false);
 
                 entity.HasOne(e => e.Product)
                     .WithMany(p => p.QRCodes)
@@ -367,6 +401,10 @@ namespace EXE02_Backend_RE_CAFE.Data
                     .WithMany(s => s.QRCodes)
                     .HasForeignKey(e => e.ProductStoryId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ProductStoryId)
+                    .IsUnique()
+                    .HasFilter("\"IsShared\" = TRUE AND \"ProductStoryId\" IS NOT NULL");
             });
 
             // QRScanLog Configuration

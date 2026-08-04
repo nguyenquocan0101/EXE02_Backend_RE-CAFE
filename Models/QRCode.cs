@@ -21,7 +21,9 @@ namespace EXE02_Backend_RE_CAFE.Models
         [StringLength(500)]
         public string LandingPageUrl { get; set; } = string.Empty;
 
-        public int ScanLimit { get; set; } = 1;
+        public bool IsShared { get; set; }
+
+        public int? ScanLimit { get; set; } = 1;
 
         public int ScanCount { get; set; } = 0;
 

@@ -30,6 +30,14 @@ namespace EXE02_Backend_RE_CAFE.Exceptions
         }
     }
 
+    public class ConflictException : ApiException
+    {
+        public ConflictException(string message)
+            : base(message, HttpStatusCode.Conflict)
+        {
+        }
+    }
+
     public class UnauthorizedException : ApiException
     {
         public UnauthorizedException(string message) 

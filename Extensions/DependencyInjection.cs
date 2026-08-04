@@ -23,6 +23,8 @@ namespace EXE02_Backend_RE_CAFE.Extensions
             services.AddScoped<IProductCustomizationService, ProductCustomizationService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<IProductCustomizationRenderEngine, BlenderProductCustomizationRenderEngine>();
+            services.AddSingleton<IStoryHtmlSanitizer, StoryHtmlSanitizer>();
+            services.AddScoped<IProductStoryService, ProductStoryService>();
             
             return services;
         }

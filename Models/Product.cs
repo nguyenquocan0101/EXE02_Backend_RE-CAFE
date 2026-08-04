@@ -68,6 +68,6 @@ namespace EXE02_Backend_RE_CAFE.Models
         public ICollection<QRCode> QRCodes { get; set; } = new List<QRCode>();
         public ICollection<ProductCustomization> ProductCustomizations { get; set; } = new List<ProductCustomization>();
         public ICollection<CouponProduct> CouponProducts { get; set; } = new List<CouponProduct>();
-        public ProductStory? ProductStory { get; set; }
+        public ICollection<ProductStory> ProductStories { get; set; } = new List<ProductStory>();
     }
 }
