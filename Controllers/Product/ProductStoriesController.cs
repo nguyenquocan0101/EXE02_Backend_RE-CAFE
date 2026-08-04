@@ -37,5 +37,19 @@ namespace EXE02_Backend_RE_CAFE.Controllers.Product
                 data: story,
                 statusCode: StatusCodes.Status200OK));
         }
+
+        [HttpPost("{slug}/open")]
+        public async Task<IActionResult> RegisterPageOpen(string slug)
+        {
+            if (!await _productStoryService.RegisterPageOpenAsync(slug))
+            {
+                return NotFound(ErrorResponse<object>(
+                    message: "Product story not found.",
+                    action: "RegisterProductStoryOpen",
+                    statusCode: StatusCodes.Status404NotFound));
+            }
+
+            return NoContent();
+        }
     }
 }

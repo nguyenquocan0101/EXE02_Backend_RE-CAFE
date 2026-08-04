@@ -60,6 +60,29 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public int DisplayOrder { get; set; }
     }
 
+    public class CreateCoffeeTypeRequest
+    {
+        [Required]
+        [StringLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(80)]
+        public string Slug { get; set; } = string.Empty;
+
+        [Range(0, int.MaxValue)]
+        public int DisplayOrder { get; set; }
+    }
+
+    public class UpdateCoffeeTypeRequest : CreateCoffeeTypeRequest
+    {
+    }
+
+    public class SetCoffeeTypeActiveRequest
+    {
+        public bool IsActive { get; set; }
+    }
+
     public class ProductStoryPublicDto
     {
         public string Slug { get; set; } = string.Empty;

@@ -14,5 +14,10 @@ namespace EXE02_Backend_RE_CAFE.Interfaces
         Task<ProductStoryAdminDto> UpdateAsync(Guid id, UpdateProductStoryRequest request);
         Task<ProductStoryAdminDto> SetPublicationAsync(Guid id, bool isPublished);
         Task<IReadOnlyList<CoffeeTypeDto>> GetActiveCoffeeTypesAsync();
+        Task<bool> RegisterPageOpenAsync(string slug);
+        Task<IReadOnlyList<CoffeeTypeDto>> GetCoffeeTypesAsync();
+        Task<CoffeeTypeDto> CreateCoffeeTypeAsync(CreateCoffeeTypeRequest request);
+        Task<CoffeeTypeDto> UpdateCoffeeTypeAsync(Guid id, UpdateCoffeeTypeRequest request);
+        Task<CoffeeTypeDto> SetCoffeeTypeActiveAsync(Guid id, bool isActive);
     }
 }

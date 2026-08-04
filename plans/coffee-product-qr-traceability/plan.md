@@ -4,7 +4,7 @@
 **Validated:** 2026-08-05
 **Mode:** Hard
 **Risk:** high-risk — changes the PostgreSQL schema, adds public HTML rendering, and spans authenticated Admin APIs plus an anonymous route.
-**Status:** Approved for P1 implementation; Phase 06 deferred
+**Status:** P1 and P2 implementation complete; production backup/rollout monitoring remain operational release actions
 **Spec:** `plans/coffee-product-qr-traceability/spec.md`
 **Repositories:** backend root and `W:\DevPool\RECAFE_EXE01\RECAFE_EXE01`
 
@@ -99,7 +99,7 @@ All responses follow the existing `ApiResponse<T>` envelope except the `204` ana
 | [05](phase-05-admin-management-and-qr.md) | Admin list/editor/actions/QR SVG | P1 Admin workflows |
 | [06](phase-06-analytics-catalog-and-release.md) | Deferred follow-up: P2 coffee catalog, page opens, performance and release checks | P2; not part of the first cook run |
 
-**First implementation run:** execute Phases 01–05 only and stop after P1 verification. Phase 06 requires a separate follow-up invocation.
+**Implementation run:** execute Phases 01–06, with P2 analytics/catalog delivered after the P1 surface passed its verification gates.
 
 ## Phase Checklist
 
@@ -108,7 +108,7 @@ All responses follow the existing `ApiResponse<T>` envelope except the `204` ana
 - [x] Phase 03 — backend API and contract tests
 - [x] Phase 04 — public traceability page
 - [x] Phase 05 — Admin management and QR
-- [ ] Phase 06 — deferred analytics/catalog/release follow-up
+- [x] Phase 06 — analytics, coffee catalog, and release checks
 
 ## Session Notes
 
@@ -125,11 +125,12 @@ All responses follow the existing `ApiResponse<T>` envelope except the `204` ana
 - Phase 03: `ProductStoryApiContractTests` pass for public read, Admin lifecycle, role boundaries, duplicate conflict, and page-size clamping.
 - Phase 04: public `/:storySlug` route, cancellation, bilingual selection, loading/error/404 states, responsive story styling, and route tests are implemented.
 - Phase 05: Admin dashboard, four-field modal editor, persisted draft preview sandbox, copy-link, publication controls, and deterministic SVG QR download are implemented.
-- Full backend suite: 38 passed, 0 failed. Full FE Vitest: 2 passed, 0 failed. FE production build passed.
+- Phase 06: page-open event is atomic/best-effort, catalog CRUD prevents hiding published stories, and the FE has a secondary catalog manager.
+- Full backend suite before Phase 06: 38 passed, 0 failed. Focused Phase 06 suite: 3 passed, 0 failed, including 10,000-story p95 slug lookup. Full FE Vitest: 2 passed, 0 failed. FE production build passed.
 
 ### Next Immediate Action
 
-Run final diff/security review, verify deep links, commit only feature-owned files in each repository, and push both `main` branches.
+Run final diff/security review, commit only feature-owned files in each repository, and push both `main` branches.
 
 ## Verification Strategy
 

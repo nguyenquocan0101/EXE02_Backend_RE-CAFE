@@ -269,9 +269,125 @@ namespace EXE02_Backend_RE_CAFE.Services
 
         public async Task<IReadOnlyList<CoffeeTypeDto>> GetActiveCoffeeTypesAsync()
         {
-            return await _context.CoffeeTypes
+            return await QueryCoffeeTypes(activeOnly: true)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<CoffeeTypeDto>> GetCoffeeTypesAsync()
+        {
+            return await QueryCoffeeTypes(activeOnly: false)
+                .ToListAsync();
+        }
+
+        public async Task<bool> RegisterPageOpenAsync(string slug)
+        {
+            var normalizedSlug = slug.Trim().ToLowerInvariant();
+            var updatedRows = await _context.QRCodes
+                .Where(qr => qr.IsShared
+                    && qr.IsActive
+                    && qr.ProductStory != null
+                    && qr.ProductStory.Slug == normalizedSlug
+                    && qr.ProductStory.IsPublished
+                    && qr.ProductStory.Product != null
+                    && qr.ProductStory.Product.IsActive
+                    && qr.ProductStory.CoffeeType != null
+                    && qr.ProductStory.CoffeeType.IsActive)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(qr => qr.ScanCount, qr => qr.ScanCount + 1));
+
+            return updatedRows > 0;
+        }
+
+        public async Task<CoffeeTypeDto> CreateCoffeeTypeAsync(CreateCoffeeTypeRequest request)
+        {
+            var slug = NormalizeCoffeeSlug(request.Slug);
+            ValidateCoffeeTypeValues(request.Name, slug);
+            if (await _context.CoffeeTypes.AnyAsync(item => item.Slug == slug))
+            {
+                throw new ConflictException("A coffee type with this slug already exists.");
+            }
+
+            var coffeeType = new CoffeeType
+            {
+                Name = request.Name.Trim(),
+                Slug = slug,
+                DisplayOrder = request.DisplayOrder,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.CoffeeTypes.Add(coffeeType);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw new ConflictException("A coffee type with this slug already exists.");
+            }
+
+            return ToCoffeeTypeDto(coffeeType);
+        }
+
+        public async Task<CoffeeTypeDto> UpdateCoffeeTypeAsync(Guid id, UpdateCoffeeTypeRequest request)
+        {
+            var coffeeType = await _context.CoffeeTypes.SingleOrDefaultAsync(item => item.Id == id);
+            if (coffeeType == null)
+            {
+                throw new NotFoundException("Coffee type not found.");
+            }
+
+            var slug = NormalizeCoffeeSlug(request.Slug);
+            ValidateCoffeeTypeValues(request.Name, slug);
+            if (await _context.CoffeeTypes.AnyAsync(item => item.Id != id && item.Slug == slug))
+            {
+                throw new ConflictException("A coffee type with this slug already exists.");
+            }
+
+            coffeeType.Name = request.Name.Trim();
+            coffeeType.Slug = slug;
+            coffeeType.DisplayOrder = request.DisplayOrder;
+            coffeeType.UpdatedAt = DateTime.UtcNow;
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw new ConflictException("The coffee type could not be updated.");
+            }
+
+            return ToCoffeeTypeDto(coffeeType);
+        }
+
+        public async Task<CoffeeTypeDto> SetCoffeeTypeActiveAsync(Guid id, bool isActive)
+        {
+            var coffeeType = await _context.CoffeeTypes.SingleOrDefaultAsync(item => item.Id == id);
+            if (coffeeType == null)
+            {
+                throw new NotFoundException("Coffee type not found.");
+            }
+
+            if (!isActive && await _context.ProductStories.AnyAsync(item => item.CoffeeTypeId == id && item.IsPublished))
+            {
+                throw new ConflictException("A coffee type used by a published page cannot be deactivated.");
+            }
+
+            coffeeType.IsActive = isActive;
+            coffeeType.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return ToCoffeeTypeDto(coffeeType);
+        }
+
+        private IQueryable<CoffeeTypeDto> QueryCoffeeTypes(bool activeOnly)
+        {
+            var query = _context.CoffeeTypes.AsNoTracking();
+            if (activeOnly)
+            {
+                query = query.Where(item => item.IsActive);
+            }
+
+            return query
                 .AsNoTracking()
-                .Where(item => item.IsActive)
                 .OrderBy(item => item.DisplayOrder)
                 .ThenBy(item => item.Name)
                 .Select(item => new CoffeeTypeDto
@@ -281,8 +397,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                     Slug = item.Slug,
                     IsActive = item.IsActive,
                     DisplayOrder = item.DisplayOrder
-                })
-                .ToListAsync();
+                });
         }
 
         private IQueryable<ProductStoryAdminDto> ProjectAdmin(IQueryable<ProductStory> query)
@@ -307,7 +422,40 @@ namespace EXE02_Backend_RE_CAFE.Services
                     .Select(qr => qr.LandingPageUrl)
                     .FirstOrDefault() ?? string.Empty,
                 SharedQrCount = item.QRCodes.Count(qr => qr.IsShared && qr.IsActive)
-            });
+                });
+        }
+
+        private static CoffeeTypeDto ToCoffeeTypeDto(CoffeeType coffeeType) => new()
+        {
+            Id = coffeeType.Id,
+            Name = coffeeType.Name,
+            Slug = coffeeType.Slug,
+            IsActive = coffeeType.IsActive,
+            DisplayOrder = coffeeType.DisplayOrder
+        };
+
+        private static string NormalizeCoffeeSlug(string value)
+        {
+            var slug = value.Trim().ToLowerInvariant();
+            while (slug.Contains("--", StringComparison.Ordinal))
+            {
+                slug = slug.Replace("--", "-", StringComparison.Ordinal);
+            }
+
+            return slug.Trim('-');
+        }
+
+        private static void ValidateCoffeeTypeValues(string name, string slug)
+        {
+            if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100)
+            {
+                throw new BadRequestException("Coffee type name is required and must be 100 characters or fewer.");
+            }
+
+            if (string.IsNullOrWhiteSpace(slug) || slug.Length > 80 || slug.Any(character => !(char.IsLetterOrDigit(character) || character == '-')))
+            {
+                throw new BadRequestException("Coffee type slug must use letters, numbers, and hyphens and be 80 characters or fewer.");
+            }
         }
 
         private string CreateStorySlug(string coffeeSlug, string productSlug)
