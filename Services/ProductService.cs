@@ -62,7 +62,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                         .Select(img => img.ImageUrl)
                         .FirstOrDefault(),
                     Model3DUrl = p.Model3DUrl,
-                    CategoryName = p.Category != null ? p.Category.Name : string.Empty
+                    CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                    ViewCount = p.ViewCount
                 })
                 .ToListAsync();
         }
@@ -124,7 +125,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                         .Select(img => img.ImageUrl)
                         .FirstOrDefault(),
                     Model3DUrl = p.Model3DUrl,
-                    CategoryName = p.Category != null ? p.Category.Name : string.Empty
+                    CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                    ViewCount = p.ViewCount
                 })
                 .ToListAsync();
 
@@ -171,7 +173,8 @@ namespace EXE02_Backend_RE_CAFE.Services
                         .Select(img => img.ImageUrl)
                         .FirstOrDefault(),
                     Model3DUrl = p.Model3DUrl,
-                    CategoryName = p.Category != null ? p.Category.Name : string.Empty
+                    CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                    ViewCount = p.ViewCount
                 })
                 .ToListAsync();
         }
@@ -426,6 +429,7 @@ namespace EXE02_Backend_RE_CAFE.Services
                 Model3DUrl = product.Model3DUrl,
                 IsPersonalizable = product.IsPersonalizable,
                 RewardPoints = product.RewardPoints,
+                ViewCount = product.ViewCount,
                 Category = product.Category != null ? new CategoryDto
                 {
                     Id = product.Category.Id,
@@ -471,6 +475,26 @@ namespace EXE02_Backend_RE_CAFE.Services
             }
 
             return MapToDetailDto(product);
+        }
+
+        public async Task<ProductViewCountDto?> IncrementProductViewCountAsync(Guid id)
+        {
+            var updatedRows = await _context.Products
+                .Where(product => product.Id == id && product.IsActive)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(product => product.ViewCount, product => product.ViewCount + 1));
+
+            if (updatedRows == 0)
+            {
+                return null;
+            }
+
+            var viewCount = await _context.Products
+                .Where(product => product.Id == id)
+                .Select(product => product.ViewCount)
+                .SingleAsync();
+
+            return new ProductViewCountDto { ViewCount = viewCount };
         }
 
         public async Task<bool> SoftDeleteProductAsync(Guid id)

@@ -40,6 +40,12 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string? ThumbnailUrl { get; set; }
         public string? Model3DUrl { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public int ViewCount { get; set; }
+    }
+
+    public class ProductViewCountDto
+    {
+        public int ViewCount { get; set; }
     }
 
     public class ProductDetailDto
@@ -59,6 +65,7 @@ namespace EXE02_Backend_RE_CAFE.DTOs
         public string? Model3DUrl { get; set; }
         public bool IsPersonalizable { get; set; }
         public int RewardPoints { get; set; }
+        public int ViewCount { get; set; }
         public CategoryDto? Category { get; set; }
         public List<ProductImageDto> Images { get; set; } = new();
         public List<ProductVariantDto> Variants { get; set; } = new();

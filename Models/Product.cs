@@ -55,6 +55,8 @@ namespace EXE02_Backend_RE_CAFE.Models
 
         public int RewardPoints { get; set; } = 0;
 
+        public int ViewCount { get; set; } = 0;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }

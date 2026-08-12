@@ -39,6 +39,25 @@ namespace EXE02_Backend_RE_CAFE.Controllers
                 statusCode: StatusCodes.Status200OK));
         }
 
+        [HttpPost("{id}/view")]
+        public async Task<IActionResult> IncrementProductView(Guid id)
+        {
+            var result = await _productService.IncrementProductViewCountAsync(id);
+            if (result == null)
+            {
+                return NotFound(ErrorResponse<object>(
+                    message: $"Product with ID {id} not found.",
+                    action: "IncrementProductView",
+                    statusCode: StatusCodes.Status404NotFound));
+            }
+
+            return Ok(SuccessResponse(
+                message: "Product view count incremented successfully.",
+                action: "IncrementProductView",
+                data: result,
+                statusCode: StatusCodes.Status200OK));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
